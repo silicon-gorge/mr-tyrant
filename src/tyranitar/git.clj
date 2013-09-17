@@ -2,7 +2,8 @@
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file]]
             [cheshire.core :refer [parse-string]])
-  (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]))
+  (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
+           [java.io FileNotFoundException]))
 
 (def base-git-url (env :service-base-git-repository-url))
 (def base-git-path (env :service-base-git-repository-path))
@@ -37,9 +38,14 @@
       (->
        (.merge git)
        (.include origin-master)
-       ;;(.setFastForward MergeCommand$FastForwardMode/FF)
        (.call))))
   )
+
+(defn- read-application-json-file
+  [application-name category]
+  (try
+    (parse-string (slurp (as-file (str (application-repository-path application-name) "/" category ".json"))))
+    (catch FileNotFoundException e nil)))
 
 (defn- read-service-properties
   [name]
@@ -59,3 +65,8 @@
   [name]
   (update-application-repository name)
   (read-service-properties name))
+
+(defn get-data
+  [name category & commit]
+  (update-application-repository name)
+  (read-application-json-file name category))

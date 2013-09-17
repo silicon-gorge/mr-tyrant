@@ -19,6 +19,9 @@
 
 (def json-content-type "application/json;charset=utf-8")
 
+(def category-regex #"service-properties|launch-data|deployment-params")
+
+
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
   (alter-var-root #'*version* (fn [_] version)))
@@ -40,9 +43,18 @@
   [application-name]
   (response (git/current-application-properties application-name) json-content-type 200))
 
+(defn- get-data
+  [application category & commit]
+  (if-let [result (git/get-data application category commit)]
+    (response result json-content-type 200)
+    (error-response (str "No data of type '" category "' for application '" application "'.") 404)))
+
 (defroutes applications-routes
-  (GET "/:application/current" [application]
-       (get-application-current application)))
+  (GET ["/:application/:category" :category category-regex] [application category]
+       (get-data application category))
+
+  (GET ["/:application/:category/:commit" :category category-regex] [application category commit]
+       (get-data application category commit)))
 
 (defroutes routes
   (context
