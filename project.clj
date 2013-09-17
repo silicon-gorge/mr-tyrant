@@ -22,7 +22,9 @@
                  [environ "0.4.0"]
                  [nokia/ring-utils "1.0.1"]
                  [metrics-clojure "1.0.1"]
-                 [metrics-clojure-ring "1.0.1"]]
+                 [metrics-clojure-ring "1.0.1"]
+                 [clj-jgit "0.3.9"]
+                 [org.eclipse.jgit "3.0.0.201306101825-r"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop
@@ -51,7 +53,9 @@
         :service-graphite-post-interval "1"
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
-        :service-production "false"}
+        :service-production "false"
+        :service-base-git-repository-url "ssh://snc@source.nokia.com/tyranitar/git/"
+        :service-base-git-repository-path "/tmp/repos/"}
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}

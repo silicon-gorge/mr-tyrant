@@ -5,6 +5,7 @@ lib*
 *jar
 .idea
 .lein-failures
+.lein-repl-history
 dc-sdk.log
 .classpath
 .lein-deps-sum

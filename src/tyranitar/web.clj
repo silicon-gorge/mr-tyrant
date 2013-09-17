@@ -1,4 +1,5 @@
 (ns tyranitar.web
+    (:require [tyranitar.git :as git])
     (:require [compojure.core :refer [defroutes context GET PUT POST DELETE]]
               [compojure.route :as route]
               [compojure.handler :as handler]
@@ -15,6 +16,8 @@
               [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
               [metrics.ring.expose :refer [expose-metrics-as-json]]
               [metrics.ring.instrument :refer [instrument]]))
+
+(def json-content-type "application/json;charset=utf-8")
 
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
@@ -33,6 +36,14 @@
                                 :version *version*
                                 :success true}))})
 
+(defn- get-application-current
+  [application-name]
+  (response (git/current-application-properties application-name) json-content-type 200))
+
+(defroutes applications-routes
+  (GET "/:application/current" [application]
+       (get-application-current application)))
+
 (defroutes routes
   (context
    "/1.x" []
@@ -41,7 +52,10 @@
         [] "pong")
 
    (GET "/status"
-        [] (status)))
+        [] (status))
+
+   (context "/applications"
+            [] applications-routes))
 
   (route/not-found (error-response "Resource not found" 404)))
 
