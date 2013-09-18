@@ -3,6 +3,8 @@
             [clojure.java.io :refer [as-file]]
             [cheshire.core :refer [parse-string]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
+           [org.eclipse.jgit.revwalk RevWalk]
+           [org.eclipse.jgit.treewalk TreeWalk]
            [java.io FileNotFoundException]))
 
 (def base-git-url (env :service-base-git-repository-url))
@@ -38,13 +40,25 @@
       (->
        (.merge git)
        (.include origin-master)
-       (.call))))
-  )
+       (.call)))))
+
+(defn get-exact-commit
+  [application env category commit]
+  (let [git (Git/open (as-file (application-repository-path application)))
+        repo (.getRepository git)
+        commit-id (.resolve repo commit)
+        rwalk (RevWalk. repo)
+        commit (.parseCommit rwalk commit-id)
+        tree (.getTree commit)
+        twalk (TreeWalk/forPath repo (str env "/" category ".json") tree)
+        loader (.open repo (.getObjectId twalk 0))
+        text-result (slurp (.openStream loader))]
+    (parse-string text-result)))
 
 (defn- read-application-json-file
-  [application-name category]
+  [application-name env category]
   (try
-    (parse-string (slurp (as-file (str (application-repository-path application-name) "/" category ".json"))))
+    (parse-string (slurp (as-file (str (application-repository-path application-name) "/" env  "/" category ".json"))))
     (catch FileNotFoundException e nil)))
 
 (defn- read-service-properties
@@ -67,6 +81,8 @@
   (read-service-properties name))
 
 (defn get-data
-  [name category & commit]
+  [name env category commit]
   (update-application-repository name)
-  (read-application-json-file name category))
+  (if (nil? commit)
+    (read-application-json-file name env category)
+    (get-exact-commit name env category commit)))
