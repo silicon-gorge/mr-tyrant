@@ -10,28 +10,28 @@
 (def base-git-url (env :service-base-git-repository-url))
 (def base-git-path (env :service-base-git-repository-path))
 
-(defn application-repository-url
-  [name]
-  (str base-git-url name))
+(defn repo-url
+  [repo-name]
+  (str base-git-url repo-name))
 
-(defn application-repository-path
+(defn repo-path
   [name]
   (str base-git-path name))
 
-(defn clone-application-repository
-  [name]
+(defn clone-repo
+  [repo-name]
   (->
    (Git/cloneRepository)
-   (.setURI (application-repository-url name))
-   (.setDirectory (as-file (application-repository-path name)))
+   (.setURI (repo-url repo-name))
+   (.setDirectory (as-file (repo-path repo-name)))
    (.setRemote "origin")
    (.setBranch "master")
    (.setBare false)
    (.call)))
 
-(defn pull-application-repository
-  [name]
-  (let [git (Git/open (as-file (application-repository-path name)))]
+(defn pull-repo
+  [repo-name]
+  (let [git (Git/open (as-file (repo-path repo-name)))]
     (->
      (.fetch git)
      (.call))
@@ -43,46 +43,47 @@
        (.call)))))
 
 (defn get-exact-commit
-  [application env category commit]
-  (let [git (Git/open (as-file (application-repository-path application)))
+  [repo-name category commit]
+  (let [git (Git/open (as-file (repo-path repo-name)))
         repo (.getRepository git)
         commit-id (.resolve repo commit)
         rwalk (RevWalk. repo)
         commit (.parseCommit rwalk commit-id)
         tree (.getTree commit)
-        twalk (TreeWalk/forPath repo (str env "/" category ".json") tree)
+        twalk (TreeWalk/forPath repo (str category ".json") tree)
         loader (.open repo (.getObjectId twalk 0))
         text-result (slurp (.openStream loader))]
     (parse-string text-result)))
 
 (defn- read-application-json-file
-  [application-name env category]
+  [repo-name category]
   (try
-    (parse-string (slurp (as-file (str (application-repository-path application-name) "/" env  "/" category ".json"))))
+    (parse-string (slurp (as-file (str (repo-path repo-name) "/" category ".json"))))
     (catch FileNotFoundException e nil)))
 
 (defn- read-service-properties
-  [name]
-  (parse-string (slurp (as-file (str (application-repository-path name) "/service-properties.json"))) ))
+  [repo-name]
+  (parse-string (slurp (as-file (str (repo-path repo-name) "/service-properties.json"))) ))
 
-(defn application-repository-exists?
-  [name]
-  (.exists (as-file (application-repository-path name))))
+(defn repo-exists?
+  [repo-name]
+  (.exists (as-file (repo-path repo-name))))
 
-(defn- update-application-repository
-  [name]
-  (if (application-repository-exists? name)
-    (pull-application-repository name)
-    (clone-application-repository name)))
+(defn- ensure-repo-up-to-date
+  [repo-name]
+  (if (repo-exists? repo-name)
+    (pull-repo repo-name)
+    (clone-repo repo-name)))
 
 (defn current-application-properties
-  [name]
-  (update-application-repository name)
-  (read-service-properties name))
+  [repo-name]
+  (ensure-repo-up-to-date repo-name)
+  (read-service-properties repo-name))
 
 (defn get-data
-  [name env category commit]
-  (update-application-repository name)
-  (if (nil? commit)
-    (read-application-json-file name env category)
-    (get-exact-commit name env category commit)))
+  [env app commit category]
+  (let [repo-name (str app "-" env)]
+    (ensure-repo-up-to-date repo-name)
+    (if (= commit "latest")
+      (read-application-json-file repo-name category)
+      (get-exact-commit repo-name category commit))))

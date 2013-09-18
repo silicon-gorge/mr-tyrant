@@ -21,6 +21,8 @@
 
 (def category-regex #"service-properties|launch-data|deployment-params")
 
+(def commit-regex #"latest|[0-9a-f]{40}")
+
 (def env-regex #"dev|prod")
 
 (def ^:dynamic *version* "none")
@@ -45,17 +47,18 @@
   (response (git/current-application-properties application-name) json-content-type 200))
 
 (defn- get-data
-  [application env category commit]
-  (if-let [result (git/get-data application env category commit)]
+  [env app commit category]
+  (if-let [result (git/get-data env app commit category)]
     (response result json-content-type 200)
-    (error-response (str "No data of type '" category "' for application '" application "'.") 404)))
+    (error-response (str "No data of type '" category "' for application '" app "'.") 404)))
 
 (defroutes applications-routes
-  (GET ["/:application/:env/:category" :env env-regex :category category-regex] [application env category]
-       (get-data application env category nil))
+  ;; (GET ["/:env/:app/:env/:category" :env env-regex :category category-regex] [application env category]
+  ;;      (get-data application env category nil))
 
-  (GET ["/:application/:env/:category/:commit" :env env-regex :category category-regex] [application env category commit]
-       (get-data application env category commit)))
+  (GET ["/:env/:app/:commit/:category" :env env-regex :commit commit-regex :category category-regex]
+       [env app commit category]
+       (get-data env app commit category)))
 
 (defroutes routes
   (context
@@ -67,7 +70,7 @@
    (GET "/status"
         [] (status))
 
-   (context "/applications"
+   (context "/apps"
             [] applications-routes))
 
   (route/not-found (error-response "Resource not found" 404)))
