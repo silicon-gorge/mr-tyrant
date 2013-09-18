@@ -53,17 +53,13 @@
         twalk (TreeWalk/forPath repo (str category ".json") tree)
         loader (.open repo (.getObjectId twalk 0))
         text-result (slurp (.openStream loader))]
-    (parse-string text-result)))
+    {:hash (.getName commit-id)
+     :data (parse-string text-result)}))
 
 (defn- read-application-json-file
   [repo-name category]
-  (try
-    (parse-string (slurp (as-file (str (repo-path repo-name) "/" category ".json"))))
-    (catch FileNotFoundException e nil)))
-
-(defn- read-service-properties
-  [repo-name]
-  (parse-string (slurp (as-file (str (repo-path repo-name) "/service-properties.json"))) ))
+  (get-exact-commit repo-name category "HEAD")
+  )
 
 (defn repo-exists?
   [repo-name]
@@ -74,11 +70,6 @@
   (if (repo-exists? repo-name)
     (pull-repo repo-name)
     (clone-repo repo-name)))
-
-(defn current-application-properties
-  [repo-name]
-  (ensure-repo-up-to-date repo-name)
-  (read-service-properties repo-name))
 
 (defn get-data
   [env app commit category]

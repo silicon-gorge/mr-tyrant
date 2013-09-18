@@ -42,10 +42,6 @@
                                 :version *version*
                                 :success true}))})
 
-(defn- get-application-current
-  [application-name]
-  (response (git/current-application-properties application-name) json-content-type 200))
-
 (defn- get-data
   [env app commit category]
   (if-let [result (git/get-data env app commit category)]
@@ -53,9 +49,6 @@
     (error-response (str "No data of type '" category "' for application '" app "'.") 404)))
 
 (defroutes applications-routes
-  ;; (GET ["/:env/:app/:env/:category" :env env-regex :category category-regex] [application env category]
-  ;;      (get-data application env category nil))
-
   (GET ["/:env/:app/:commit/:category" :env env-regex :commit commit-regex :category category-regex]
        [env app commit category]
        (get-data env app commit category)))
@@ -74,7 +67,6 @@
             [] applications-routes))
 
   (route/not-found (error-response "Resource not found" 404)))
-
 
 (def app
   (-> routes
