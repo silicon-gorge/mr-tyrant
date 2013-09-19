@@ -14,7 +14,7 @@ deployment and application configuration process.
 * **launch data** - information required for an application to
 install itself onto a server.
 
-* **service properties** - configuration paramters for a server, for
+* **service properties** - configuration parameters for a server, for
 example urls to other used applications, logging levels, etc...
 
 This information is held several git repositories in source.nokia.com
@@ -128,12 +128,14 @@ configuration data for the specific application _{app-name}_. It only returns th
 GET /1.x/apps/{env}/{app-name}/{commit}/{properties-set}
 
 For the particular environment _{env} = dev | prod_, the application _{app-name}_
-and the commit _{commit} = 40 character commit id | latest_ get the particular set of properties _{properties-set} =
-deployment-params | launch-data | service-properties_.
+and the commit _{commit} = 40 character commit id | head_ get the particular set of properties _{properties-set} =
+deployment-params | launch-data | service-properties_. The requested commit can be specified by either _head_ 
+(case-insensitive) OR _head~n_ where 'n' is the number of revisions back from HEAD. Alternatively, the full 40-char
+GIT hash may be used.
 
 ### Example Request
 
-    GET http://tyranitar.ent.nokia.com:8080/1.x/dev/gatekeeper/latest/service-properties
+    GET http://tyranitar.ent.nokia.com:8080/1.x/dev/gatekeeper/head~1/service-properties
 
 ### Example Response
 
