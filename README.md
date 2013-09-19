@@ -132,6 +132,7 @@ deployment-params | launch-data | service-properties_.
 ### Example Response
 
     200 OK
+    Content-Type: application/json; charset=utf-8
     {
       "hash" : "d78f553564f10b4931dab2627c46af3db2ae1b22",
       "data" : {
