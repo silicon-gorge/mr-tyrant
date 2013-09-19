@@ -74,6 +74,8 @@
 
   :uberjar-name "Tyranitar.jar"
 
+  :resource-paths ["shared"]
+
   :rpm {:name "Tyranitar1"
         :summary "RPM for Tyranitar service"
         :copyright "Nokia 2013"
