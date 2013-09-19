@@ -27,7 +27,7 @@ JETTY_USER=${JETTY_USER:-"jetty"}
 JAVAPTH=${JAVAPTH:-"/usr/java/default/bin"}
 
 #define property file location
-export SERVICE_JVMARGS="-Dconfig=/usr/local/deployment/Tyranitar1/config/post_install.properties"
+export SERVICE_JVMARGS="-Dconfig=/usr/local/deployment/tyranitar/config/post_install.properties"
 
 #define the script to use to start jetty
 JETTYSH=${JETTYSH:-"$JETTY_HOME/bin/start.sh"}

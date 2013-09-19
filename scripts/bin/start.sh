@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PIDS=$(pgrep java -lf | grep Tyranitar | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
@@ -9,12 +9,12 @@ then
 fi
 
 JETTY_HOME=/usr/local/jetty
-JAR_NAME=$JETTY_HOME/Tyranitar.jar
+JAR_NAME=$JETTY_HOME/tyranitar.jar
 LOG_FILE=$JETTY_HOME/log/jetty.log
 ERR_FILE=$JETTY_HOME/log/jetty.err
 
 IFS="$(echo -e "\n\r")"
-for LINE in `cat /usr/local/deployment/Tyranitar1/config/post_install.properties`
+for LINE in `cat /usr/local/deployment/tyranitar/config/post_install.properties`
 do
   case $LINE in
     \#*) ;;
@@ -32,7 +32,7 @@ SERVICE_PORT=${SERVICE_PORT:-"8080"}
 STATUS_PATH=${SERVICE_STATUS_PATH:-"/1.x/status"}
 SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"15"}
 
-nohup java -Dconfig=/usr/local/deployment/Tyranitar1/config/post_install.properties $SERVICE_JVMARGS -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
+nohup java -Dconfig=/usr/local/deployment/tyranitar/config/post_install.properties $SERVICE_JVMARGS -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
 
 statusUrl=http://localhost:$SERVICE_PORT$STATUS_PATH
 waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
@@ -49,7 +49,7 @@ do
   if [ $sleepCounter -ge $waitTimeout ]
   then
     echo "Jetty didn't start within $waitTimeout seconds."
-    PIDS=$(pgrep java -lf | grep Tyranitar | cut -d" " -f1);
+    PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
 	  echo "Killing $PIDS";

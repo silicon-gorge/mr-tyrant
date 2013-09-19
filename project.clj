@@ -72,11 +72,11 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "Tyranitar.jar"
+  :uberjar-name "tyranitar.jar"
 
   :resource-paths ["shared"]
 
-  :rpm {:name "Tyranitar1"
+  :rpm {:name "tyranitar"
         :summary "RPM for Tyranitar service"
         :copyright "Nokia 2013"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
@@ -88,13 +88,13 @@
                     :filemode "444"
                     :username "jetty"
                     :groupname "jetty"
-                    :sources {:source [{:location "target/Tyranitar.jar"}]}}
+                    :sources {:source [{:location "target/tyranitar.jar"}]}}
                    {:directory "/usr/local/jetty/bin"
                     :filemode "744"
                     :username "jetty"
                     :groupname "jetty"
                     :sources {:source [{:location "scripts/bin"}]}}
-                   {:directory "/usr/local/deployment/Tyranitar1/bin"
+                   {:directory "/usr/local/deployment/tyranitar/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
