@@ -91,18 +91,25 @@ specified with the optional parameter _n_ = a number or _all_.
       "commits" : [
         {
           "hash" : "9cfe7ab02241b9cb6a068973fae90f833210ab72",
-          "user" : "mdaley"
-          "message" : "decreased instance site to micro."
+          "committer" : "mdaley",
+          "email" : "matthew.daley@nokia.com",
+          "message" : "decreased instance site to micro.",
+          "date" : "2013-09-19T10:53:22Z"
         },
         {
           "hash" : "dc782a45e2984e20bad30ab25fba45aa94cb52be",
-          "user" : "micbell",
-          "message" : "corrected mistake in launch data"
+          "committer" : "micbell",
+          "email" : "michael.1.bell@nokia.com",
+          "message" : "corrected mistake in launch data",
+          "date" : "2013-09-19T10:51:51Z"
         },
         {
           "hash" : "a78f553565f10b4931dab2657c461b3db2ae1b7e",
-          "user" : "wiekzor",
-          "message" : "Initial properties for subscriptions service in prod."
+          "committer" : "wiekzor",
+          "email" : "jerzy.wieczorek@nokia.com",
+          "message" : "Initial properties for subscriptions service in prod.",
+          "date" : "2013-09-18T14:25:49Z"
+        }
       ]
     }
 

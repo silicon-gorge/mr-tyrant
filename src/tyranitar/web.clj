@@ -48,7 +48,17 @@
     (response result json-content-type 200)
     (error-response (str "No data of type '" category "' for application '" app "'.") 404)))
 
+(defn- get-list
+  [env app]
+  (if-let [result (git/get-list env app)]
+    (response result json-content-type 200)
+    (error-response (str "Application '" app "' does not exist.") 404)))
+
 (defroutes applications-routes
+  (GET ["/:env/:app" :env env-regex]
+       [env app]
+       (get-list env app))
+
   (GET ["/:env/:app/:commit/:category" :env env-regex :commit commit-regex :category category-regex]
        [env app commit category]
        (get-data env app commit category)))
