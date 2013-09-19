@@ -75,9 +75,8 @@ properties for this application/environment combination at the specified commit 
 GET /1.x/apps/{env}/{app-name}
 
 For the particular environment _{env} = dev | prod_ returns the list of commits of
-configuration data for the specific application _{app-name}_. By default, the most
-recent 20 commits are returned, although the maximum amount to be returned can be
-specified with the optional parameter _n_ = a number or _all_.
+configuration data for the specific application _{app-name}_. It only returns the
+20 most recent commits. This is all we need for our purposes, probably.
 
 ### Example Request
 
