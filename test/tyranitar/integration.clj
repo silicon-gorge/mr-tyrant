@@ -43,12 +43,12 @@
            response => (contains {:status 200})))
 
    (fact "Can obtain latest from Tyranitar test-dev git repository"
-         (let [response (client/get (url+ "/apps/dev/test/latest/service-properties"))
+         (let [response (client/get (url+ "/apps/dev/test/head/service-properties"))
                body (read-body response)]
            response => contains {:status 200}))
 
    (fact "Can obtain data from Tyranitar test-dev git repository using a specific commit id"
-         (let [latest (client/get (url+ "/apps/dev/test/latest/service-properties"))
+         (let [latest (client/get (url+ "/apps/dev/test/head/service-properties"))
                latest-body (read-body latest)
                latest-commit-id (:hash latest-body)
                response (client/get (url+ (str "/apps/dev/test/" latest-commit-id "/service-properties")))
@@ -58,7 +58,7 @@
            commit-id => latest-commit-id))
 
    (fact "Can list the commits in the test-dev repository"
-         (let [latest (client/get (url+ "/apps/dev/test/latest/service-properties"))
+         (let [latest (client/get (url+ "/apps/dev/test/head/service-properties"))
                latest-body (read-body latest)
                latest-commit-id (:hash latest-body)
                response (client/get (url+ "/apps/dev/test"))

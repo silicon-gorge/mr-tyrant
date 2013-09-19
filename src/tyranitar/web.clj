@@ -22,7 +22,7 @@
 
 (def category-regex #"service-properties|launch-data|deployment-params")
 
-(def commit-regex #"latest|[0-9a-f]{40}")
+(def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
 
 (def env-regex #"dev|prod")
 

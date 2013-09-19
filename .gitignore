@@ -10,6 +10,7 @@ dc-sdk.log
 .classpath
 .lein-deps-sum
 .lein-plugins/
+.settings/
 .project
 bin/
 .lein-env

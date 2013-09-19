@@ -1,9 +1,10 @@
 (ns tyranitar.git
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file]]
-            [cheshire.core :refer [parse-string]]
             [clj-time.coerce :refer [from-long]]
-            [clj-time.format :refer [unparse formatters]])
+            [clj-time.format :refer [unparse formatters]]
+            [clojure.string :refer [upper-case]]
+            [cheshire.core :refer [parse-string]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
@@ -20,8 +21,8 @@
   [name]
   (str base-git-path name))
 
-(defn- clone-repo
-  "Clone a repository."
+(defn clone-repo
+  "Clones the latest version of the specified repo from GIT."
   [repo-name]
   (->
    (Git/cloneRepository)
@@ -46,8 +47,9 @@
        (.include origin-master)
        (.call)))))
 
-(defn- get-exact-commit
-  "Get the hash and the data contained in the file for the category file in the chosen repository at the chosen commit level."
+(defn get-exact-commit
+  "Get the hash and the data contained in the file for the category file in the chosen repository at the specified 
+   commit level from GIT. Will accept the same commit identifiers as GIT."
   [repo-name category commit]
   (let [git (Git/open (as-file (repo-path repo-name)))
         repo (.getRepository git)
@@ -85,20 +87,18 @@
   (.exists (as-file (repo-path repo-name))))
 
 (defn- ensure-repo-up-to-date
-  "Ensure that the repository is up-to-date by pulling or cloning."
+  "Gets or updates the specified repo from GIT"
   [repo-name]
   (if (repo-exists? repo-name)
     (pull-repo repo-name)
     (clone-repo repo-name)))
 
 (defn get-data
-  "Get the hash and actual data for a particular commit to a particular category's file."
+   "Fetches the data corresponding to the given params from GIT"
   [env app commit category]
   (let [repo-name (str app "-" env)]
     (ensure-repo-up-to-date repo-name)
-    (if (= commit "latest")
-      (get-exact-commit repo-name category "HEAD")
-      (get-exact-commit repo-name category commit))))
+    (get-exact-commit repo-name category (upper-case commit))))
 
 (defn get-list
   "Get a list of the 20 most recent commits to the repository in most recent first order."
