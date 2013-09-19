@@ -86,6 +86,9 @@
 
    (context "/apps"
             [] applications-routes))
+  
+  (GET "/healthcheck" []
+       (response "" json-content-type 200))
 
   (route/not-found (error-response "Resource not found" 404)))
 
