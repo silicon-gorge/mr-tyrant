@@ -55,4 +55,14 @@
                body (read-body response)
                commit-id (:hash body)]
            response => (contains {:status 200})
-           commit-id => latest-commit-id)))
+           commit-id => latest-commit-id))
+
+   (fact "Can list the commits in the test-dev repository"
+         (let [latest (client/get (url+ "/apps/dev/test/latest/service-properties"))
+               latest-body (read-body latest)
+               latest-commit-id (:hash latest-body)
+               response (client/get (url+ "/apps/dev/test"))
+               body (read-body response)
+               first-commit-id (:hash (first (:commits body)))]
+           response => (contains {:status 200})
+           first-commit-id => latest-commit-id)))
