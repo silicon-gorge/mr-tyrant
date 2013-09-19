@@ -56,11 +56,6 @@
     {:hash (.getName commit-id)
      :data (parse-string text-result)}))
 
-(defn- read-application-json-file
-  [repo-name category]
-  (get-exact-commit repo-name category "HEAD")
-  )
-
 (defn repo-exists?
   [repo-name]
   (.exists (as-file (repo-path repo-name))))
@@ -76,5 +71,5 @@
   (let [repo-name (str app "-" env)]
     (ensure-repo-up-to-date repo-name)
     (if (= commit "latest")
-      (read-application-json-file repo-name category)
+      (get-exact-commit repo-name category "HEAD")
       (get-exact-commit repo-name category commit))))
