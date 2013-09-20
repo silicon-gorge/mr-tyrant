@@ -102,6 +102,8 @@
       (ensure-repo-up-to-date repo-name)
       (get-exact-commit repo-name category (upper-case commit))
       (catch InvalidRemoteException e
+        nil)
+      (catch NullPointerException e
         nil))))
 
 (defn get-list
