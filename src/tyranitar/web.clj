@@ -88,8 +88,8 @@
             [] applications-routes))
   
   (GET "/healthcheck" []
-       (response "" json-content-type 200))
-
+       (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+  
   (route/not-found (error-response "Resource not found" 404)))
 
 (def app
