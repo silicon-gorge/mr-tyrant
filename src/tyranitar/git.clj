@@ -7,6 +7,7 @@
             [clojure.string :refer [upper-case]]
             [cheshire.core :refer [parse-string]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
+           [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.transport JschConfigSessionFactory SshSessionFactory]
@@ -134,12 +135,20 @@
    "Fetches the data corresponding to the given params from GIT"
   [env app commit category]
   (let [repo-name (str app "-" env)]
-    (ensure-repo-up-to-date repo-name)
-    (get-exact-commit repo-name category (upper-case commit))))
+    (try
+      (ensure-repo-up-to-date repo-name)
+      (get-exact-commit repo-name category (upper-case commit))
+      (catch InvalidRemoteException e
+        nil)
+      (catch NullPointerException e
+        nil))))
 
 (defn get-list
   "Get a list of the 20 most recent commits to the repository in most recent first order."
   [env app]
   (let [repo-name (str app "-" env)]
-    (ensure-repo-up-to-date repo-name)
-    (get-recent-commits-list repo-name)))
+    (try
+      (ensure-repo-up-to-date repo-name)
+      (get-recent-commits-list repo-name)
+      (catch InvalidRemoteException e
+        nil))))

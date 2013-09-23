@@ -47,7 +47,7 @@
   [env app commit category]
   (if-let [result (git/get-data env app commit category)]
     (response result json-content-type 200)
-    (error-response (str "No data of type '" category "' for application '" app "'.") 404)))
+    (error-response (str "No data of type '" category "' for application '" app "' at revision '" commit "' - does it exist?") 404)))
 
 (defn- get-list
   [env app]
