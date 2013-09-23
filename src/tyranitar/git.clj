@@ -1,6 +1,7 @@
 (ns tyranitar.git
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file]]
+            [clojure.tools.logging :as logging]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
             [clojure.string :refer [upper-case]]
@@ -8,10 +9,46 @@
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
+           [org.eclipse.jgit.transport JschConfigSessionFactory SshSessionFactory]
+           [com.jcraft.jsch JSch]
            [java.io FileNotFoundException]))
+
+;; (def ^{:dynamic true}
+;;   ssh-log-levels
+;;   (atom
+;;    {com.jcraft.jsch.Logger/DEBUG :trace
+;;     com.jcraft.jsch.Logger/INFO :debug
+;;     com.jcraft.jsch.Logger/WARN :warn
+;;     com.jcraft.jsch.Logger/ERROR :error
+;;     com.jcraft.jsch.Logger/FATAL :fatal}))
+
+;; (deftype SshLogger
+;;    [log-level]
+;;    com.jcraft.jsch.Logger
+;;    (isEnabled
+;;     [_ level]
+;;     (>= level log-level))
+;;    (log
+;;     [_ level message]
+;;     (logging/log "clj-ssh.ssh" (@ssh-log-levels level) nil message)))
+
+;; (JSch/setLogger (SshLogger. com.jcraft.jsch.Logger/DEBUG))
+
 
 (def base-git-url (env :service-base-git-repository-url))
 (def base-git-path (env :service-base-git-repository-path))
+
+(def my-jcs-factory
+  (proxy [JschConfigSessionFactory] []
+    (configure [host session]
+      (.setConfig session "StrictHostChecking" "yes"))
+    (createDefaultJSch [fs]
+      (let [jsch (JSch.)]
+        (.addIdentity jsch "/home/mdaley/workspace/tyranitar/shared/tyranitar_rsa")
+        (.setKnownHosts jsch "/home/mdaley/workspace/tyranitar/shared/known_hosts")
+        jsch))))
+
+(SshSessionFactory/setInstance my-jcs-factory)
 
 (defn- repo-url
   [repo-name]
@@ -48,7 +85,7 @@
        (.call)))))
 
 (defn get-exact-commit
-  "Get the hash and the data contained in the file for the category file in the chosen repository at the specified 
+  "Get the hash and the data contained in the file for the category file in the chosen repository at the specified
    commit level from GIT. Will accept the same commit identifiers as GIT."
   [repo-name category commit]
   (let [git (Git/open (as-file (repo-path repo-name)))
