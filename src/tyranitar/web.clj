@@ -20,7 +20,7 @@
 
 (def json-content-type "application/json;charset=utf-8")
 
-(def category-regex #"service-properties|launch-data|deployment-params")
+(def category-regex #"application-properties|launch-data|deployment-params")
 
 (def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
 
@@ -84,12 +84,12 @@
                    (.getFile)
                    (java.io.FileInputStream.))})
 
-   (context "/apps"
+   (context "/applications"
             [] applications-routes))
-  
+
   (GET "/healthcheck" []
        (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
-  
+
   (route/not-found (error-response "Resource not found" 404)))
 
 (def app
