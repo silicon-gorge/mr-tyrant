@@ -44,5 +44,7 @@ fi
 
 /usr/bin/getent passwd jetty
 
+cp /usr/local/tyranitar/etc/${env}.properties /usr/local/deployment/tyranitar/config/post_install.properties
+
 /bin/echo "preinstall script finished"
 exit 0
