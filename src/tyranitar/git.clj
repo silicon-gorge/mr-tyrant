@@ -1,7 +1,7 @@
 (ns tyranitar.git
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file make-reader]]
-            [clojure.tools.logging :as logging]
+            [clojure.tools.logging :refer [info warn error]]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
             [clojure.string :refer [upper-case]]
@@ -77,9 +77,11 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (def my-jcs-factory
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
+      (info "Configuring JschConfigSessionFactory.")
       (.setConfig session "StrictHostChecking" "yes"))
     (createDefaultJSch [fs]
       (let [jsch (JSch.)]
+        (info "Creating default JSch using tyranitar private key and known-hosts.")
         (.addIdentity jsch "tyranitar" (.getBytes tyranitar-private-key) nil nil)
         (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes known-hosts)))
         jsch))))
@@ -97,6 +99,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn clone-repo
   "Clones the latest version of the specified repo from GIT."
   [repo-name]
+  (info "Cloning repository to" (repo-path repo-name))
   (->
    (Git/cloneRepository)
    (.setURI (repo-url repo-name))
@@ -104,26 +107,32 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
    (.setRemote "origin")
    (.setBranch "master")
    (.setBare false)
-   (.call)))
+   (.call))
+  (info "Cloning completed."))
 
 (defn- pull-repo
   "Pull a repository by fetching then merging. Assumes no merge conflicts which should be OK as the repository will only ever be touched via this route."
   [repo-name]
   (let [git (Git/open (as-file (repo-path repo-name)))]
+    (info "Fetching repository to" (repo-path repo-name))
     (->
      (.fetch git)
      (.call))
+    (info "Fetch completed.")
     (let [repo (.getRepository git)
           origin-master (.resolve repo "origin/master")]
+      (info "Merging origin/master.")
       (->
        (.merge git)
        (.include origin-master)
-       (.call)))))
+       (.call))
+      (info "Merge completed."))))
 
 (defn get-exact-commit
   "Get the hash and the data contained in the file for the category file in the chosen repository at the specified
    commit level from GIT. Will accept the same commit identifiers as GIT."
   [repo-name category commit]
+  (info "Attempting to get exact commit" commit "in" repo-name "for category" category)
   (let [git (Git/open (as-file (repo-path repo-name)))
         repo (.getRepository git)
         commit-id (.resolve repo commit)
@@ -133,6 +142,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         twalk (TreeWalk/forPath repo (str category ".json") tree)
         loader (.open repo (.getObjectId twalk 0))
         text-result (slurp (.openStream loader))]
+    (info "Commit with hash" (.getName commit-id) "obtained")
     {:hash (.getName commit-id)
      :data (parse-string text-result)}))
 
@@ -148,6 +158,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn- get-recent-commits-list
   "Get the 20 most recent commits to the repository."
   [repo-name]
+  (info "Attempting to get recent commits for repository" repo-name)
   (let [git (Git/open (as-file (repo-path repo-name)))
         commits (->
                  (.log git)

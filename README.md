@@ -14,8 +14,8 @@ deployment and application configuration process.
 * **launch data** - information required for an application to
 install itself onto a server.
 
-* **service properties** - configuration parameters for a server, for
-example urls to other used applications, logging levels, etc...
+* **application properties** - configuration parameters for an application,
+for example urls to other used applications, logging levels, etc...
 
 This information is held several git repositories in source.nokia.com
 in the _tyranitar_ project. For each application, there are two
@@ -28,7 +28,7 @@ containing the configuration information:
 
 * launch-data.json
 
-* service-properties.json
+* application-properties.json
 
 The whole point of this approach is that we keep all information
 required for application configuation and deployment under tight
@@ -62,17 +62,17 @@ GET /1.x/status (returns status of the service)
 
 GET /1.x/healthcheck (returns _200_ or _500_ depending on whether the service is healthy)
 
-GET /1.x/apps/{env}/{app-name} (returns a list of the commits that exist for this
+GET /1.x/applications/{env}/{app-name} (returns a list of the commits that exist for this
 application/environment combination in latest-first order)
 
-GET /1.x/apps/{env}/{app-name}/{commit}/{properties-set} (returns a specific set of
+GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set} (returns a specific set of
 properties for this application/environment combination at the specified commit level)
 
 ## List Commits
 
 ### Resource Details
 
-GET /1.x/apps/{env}/{app-name}
+GET /1.x/applications/{env}/{app-name}
 
 For the particular environment _{env} = dev | prod_ returns the list of commits of
 configuration data for the specific application _{app-name}_. It only returns the
@@ -80,7 +80,7 @@ configuration data for the specific application _{app-name}_. It only returns th
 
 ### Example Request
 
-    GET http://tyranitor.ent.nokia.com:8080/1.x/apps/prod/subscriptions
+    GET http://tyranitor.ent.nokia.com:8080/1.x/applications/prod/subscriptions
 
 ### Example Response
 
@@ -125,17 +125,17 @@ configuration data for the specific application _{app-name}_. It only returns th
 
 ### Resource Details
 
-GET /1.x/apps/{env}/{app-name}/{commit}/{properties-set}
+GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set}
 
 For the particular environment _{env} = dev | prod_, the application _{app-name}_
 and the commit _{commit} = 40 character commit id | head_ get the particular set of properties _{properties-set} =
-deployment-params | launch-data | service-properties_. The requested commit can be specified by either _head_ 
+deployment-params | launch-data | application-properties_. The requested commit can be specified by either _head_
 (case-insensitive) OR _head~n_ where 'n' is the number of revisions back from HEAD. Alternatively, the full 40-char
 GIT hash may be used.
 
 ### Example Request
 
-    GET http://tyranitar.ent.nokia.com:8080/1.x/dev/gatekeeper/head~1/service-properties
+    GET http://tyranitar.ent.nokia.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
 
 ### Example Response
 
