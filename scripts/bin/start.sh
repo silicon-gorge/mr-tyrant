@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SERVICE_NAME=tyranitar
+
 PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
@@ -8,13 +10,13 @@ then
   exit 1
 fi
 
-JETTY_HOME=/usr/local/jetty
-JAR_NAME=$JETTY_HOME/tyranitar.jar
-LOG_FILE=$JETTY_HOME/log/jetty.log
-ERR_FILE=$JETTY_HOME/log/jetty.err
+SERVICE_HOME=/usr/local/${SERVICE_NAME}
+JAR_NAME=$SERVICE_HOME/${SERVICE_NAME}.jar
+LOG_FILE=$SERVICE_HOME/log/jetty.log
+ERR_FILE=$SERVICE_HOME/log/jetty.err
 
 IFS="$(echo -e "\n\r")"
-for LINE in `cat /usr/local/${SERVICE_NAME_MAJOR}/etc/${AWSENV}.properties`
+for LINE in `cat /usr/local/${SERVICE_NAME}/etc/${AWSENV}.properties`
 do
   case $LINE in
     \#*) ;;
@@ -33,6 +35,9 @@ STATUS_PATH=${SERVICE_STATUS_PATH:-"/1.x/status"}
 SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"15"}
 
 nohup java $SERVICE_JVMARGS -Dservice.logging.path=${SERVICE_LOGGING_PATH} -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
+
+logpath=$SERVICE_LOGGING_PATH
+echo "Logging path = $logpath"
 
 statusUrl=http://localhost:$SERVICE_PORT$STATUS_PATH
 waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
