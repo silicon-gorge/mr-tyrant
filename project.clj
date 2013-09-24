@@ -47,6 +47,8 @@
         :service-port "8080"
         :service-url "http://localhost:%s/1.x"
         :restdriver-port "8081"
+        :service-logging-filethreshold=info
+        :service-logging-path=/var/log/tyranitar
         :environment-entertainment-graphite-host "graphite.brislabs.com"
         :environment-entertainment-graphite-port "8080"
         :service-graphite-post-interval "1"

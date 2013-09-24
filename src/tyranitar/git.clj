@@ -176,7 +176,9 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [repo-name]
   (if (repo-exists? repo-name)
     (pull-repo repo-name)
-    (clone-repo repo-name)))
+    (do
+      (info (str "Repo '" repo-name "' not found - attempting to clone"))
+      (clone-repo repo-name))))
 
 (defn get-data
    "Fetches the data corresponding to the given params from GIT"
@@ -186,10 +188,13 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
       (ensure-repo-up-to-date repo-name)
       (get-exact-commit repo-name category (upper-case commit))
       (catch InvalidRemoteException e
+        (info (str "Can't communicate with remote repo '" repo-name "': " e))
         nil)
       (catch NullPointerException e
+        (info (str "Revision '" commit "' not found in repo '" repo-name "': " e))
         nil)
       (catch MissingObjectException e
+        (info (str "Missing object for revision '" commit "' in repo '" repo-name "': " e))
         nil))))
 
 (defn get-list
@@ -200,4 +205,5 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
       (ensure-repo-up-to-date repo-name)
       (get-recent-commits-list repo-name)
       (catch InvalidRemoteException e
+        (info (str "Can't communicate with remote repo '" repo-name "': " e))
         nil))))
