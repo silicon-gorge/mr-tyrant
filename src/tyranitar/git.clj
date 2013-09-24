@@ -8,6 +8,7 @@
             [cheshire.core :refer [parse-string]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
+           [org.eclipse.jgit.errors MissingObjectException]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.transport JschConfigSessionFactory SshSessionFactory]
@@ -187,6 +188,8 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
       (catch InvalidRemoteException e
         nil)
       (catch NullPointerException e
+        nil)
+      (catch MissingObjectException e
         nil))))
 
 (defn get-list
