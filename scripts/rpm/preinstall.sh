@@ -47,5 +47,9 @@ fi
 mkdir /usr/local/deployment/tyranitar/config
 cp /usr/local/tyranitar/etc/${AWSENV}.properties /usr/local/deployment/tyranitar/config/post_install.properties
 
+mkdir -p /usr/local/tyranitar/repos
+chown jetty /usr/local/tyranitar/repos
+chgrp jetty /usr/local/tyranitar/repos
+
 /bin/echo "preinstall script finished"
 exit 0
