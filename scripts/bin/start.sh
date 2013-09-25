@@ -11,12 +11,13 @@ then
 fi
 
 SERVICE_HOME=/usr/local/${SERVICE_NAME}
-JAR_NAME=$SERVICE_HOME/${SERVICE_NAME}.jar
-LOG_FILE=$SERVICE_HOME/log/jetty.log
-ERR_FILE=$SERVICE_HOME/log/jetty.err
+JETTY_HOME=/usr/local/jetty
+JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
+LOG_FILE=$JETTY_HOME/log/jetty.log
+ERR_FILE=$JETTY_HOME/log/jetty.err
 
 IFS="$(echo -e "\n\r")"
-for LINE in `cat /usr/local/${SERVICE_NAME}/etc/${AWSENV}.properties`
+for LINE in `cat ${SERVICE_HOME}/etc/${AWSENV}.properties`
 do
   case $LINE in
     \#*) ;;
