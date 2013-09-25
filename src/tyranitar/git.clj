@@ -8,7 +8,7 @@
             [cheshire.core :refer [parse-string]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
-           [org.eclipse.jgit.errors MissingObjectException]
+           [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.transport JschConfigSessionFactory SshSessionFactory]
@@ -207,3 +207,12 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
       (catch InvalidRemoteException e
         (info (str "Can't communicate with remote repo '" repo-name "': " e))
         nil))))
+
+(defn git-connection-working
+  "Returns true if the remote repository is available and behaving as expected"
+  []
+  (try
+    (get-list "dev" "skeleton")
+    true
+    (catch Exception e
+      false)))

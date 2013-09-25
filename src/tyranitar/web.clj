@@ -35,13 +35,15 @@
    :headers {"Content-Type" content-type}
    :body data})
 
-(defn status
+(defn- status
   []
-  {:headers {"Content-Type" "application/xml"}
-   :body    (emit-str (element :status
-                               {:serviceName "tyranitar"
-                                :version *version*
-                                :success true}))})
+  (let [git-ok (git/git-connection-working)]
+    (->
+     {:name "tyranitar"
+      :version *version*
+      :success git-ok
+      :dependencies [{:name "snc" :success git-ok}]}
+     (response json-content-type))))
 
 (defn- get-data
   [env app commit category]
@@ -88,7 +90,11 @@
             [] applications-routes))
 
   (GET "/healthcheck" []
-       (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+       (let [git-ok (git/git-connection-working)]
+         (if git-ok
+           (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8")
+           (response "I am unwell. Can't talk to remote git repository." "text/plain;charset=utf-8" 500)))
+       )
 
   (route/not-found (error-response "Resource not found" 404)))
 

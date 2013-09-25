@@ -39,8 +39,12 @@
 
    (fact "Status returns all required elements"
          (let [response (client/get (url+ "/status") {:throw-exceptions false})
-               body (read-body response)]
-           response => (contains {:status 200})))
+               body (read-body response)
+               success (:success body)
+               snc-success (:success (first (:dependencies body)))]
+           response => (contains {:status 200})
+           success => true
+           snc-success => true))
 
    (fact "Can obtain latest from Tyranitar test-dev git repository"
          (let [response (client/get (url+ "/applications/dev/test/head/application-properties"))
