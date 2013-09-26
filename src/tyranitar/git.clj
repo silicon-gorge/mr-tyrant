@@ -6,7 +6,8 @@
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
             [clojure.string :refer [upper-case]]
-            [cheshire.core :refer [parse-string]])
+            [cheshire.core :refer [parse-string]]
+            [slingshot.slingshot :refer [try+ throw+]])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
@@ -256,7 +257,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
                                        :throw-exceptions false})
         status (:status response)]
     (when (not= status 200)
-      (throw (RuntimeException. (str "Couldn't create repository. SNC returned status " status))))))
+      (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
 
 (defn create-application
   [name]

@@ -17,7 +17,8 @@
                                               replace-guid replace-mongoid replace-number]]
             [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
             [metrics.ring.expose :refer [expose-metrics-as-json]]
-            [metrics.ring.instrument :refer [instrument]]))
+            [metrics.ring.instrument :refer [instrument]]
+            [slingshot.slingshot :refer [try+]]))
 
 (def json-content-type "application/json;charset=utf-8")
 
@@ -61,7 +62,9 @@
 (defn- create-application
   [body]
   (let [data (cheshire/parse-string (slurp body) true)]
-    (git/create-application (:name data))))
+    (try+
+     (response (git/create-application (:name data)) json-content-type)
+     (catch [:status 422] e (error-response (str "Could not create application '" (:name data) "', message: " (:message e)) 409)))))
 
 (defroutes applications-routes
   (GET "/"
@@ -70,7 +73,7 @@
 
   (POST "/"
         {body :body}
-        (response (create-application body) json-content-type))
+        (create-application body))
 
   (GET ["/:env" :env env-regex]
        [env]
