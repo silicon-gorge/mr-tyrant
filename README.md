@@ -68,6 +68,15 @@ application/environment combination in latest-first order)
 GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set} (returns a specific set of
 properties for this application/environment combination at the specified commit level)
 
+GET /1.x/applications (returns a list of all the applications which have repositories in 
+any environment).
+
+GET /1.x/applications/{env} (returns a list of all the applications which have repositories 
+in the specified environment).
+
+POST /1.x/applications (creates new application repositories in 'dev' and 'prod' environments.
+Application name specified in body).
+
 ## List Commits
 
 ### Resource Details
@@ -157,10 +166,101 @@ GIT hash may be used.
         "jagus1-baseurl" : "http://jagus.ent.cq3.brislabs.com:8080/1.x"
       }
 
-  ### Response Content-Type
+### Response Codes
 
-  200 OK
+200 OK
 
-  404 NotFound
+404 NotFound
 
-  500 InternalServerError
+500 InternalServerError
+  
+**************************************
+
+## Obtain List of All Applications
+
+### Resource Details
+  
+GET /1.x/applications 
+
+Returns a list of all the applications which have repositories configured in any environment.
+
+### Example Request
+
+    GET /1.x/applications
+    
+### Example Response
+
+    {
+      "repositories": [
+          "skeleton-dev",
+          "test-dev",
+          "test-prod",
+          "test1-dev",
+          "test1-prod"
+      ]
+    }
+
+### Response Codes
+
+200 OK
+
+500 InternalServerError
+
+## Obtain List of All Applications by Environment
+
+### Resource Details
+
+GET /1.x/applications/{env} 
+
+Returns a list of all the applications which have repositories in the specified environment.
+
+### Example Request
+
+    GET /1.x/applications/dev
+    
+### Example Response
+
+    {
+      "repositories": [
+          "skeleton-dev",
+          "test-dev",
+          "test1-dev",
+      ]
+    }
+
+### Response Codes
+
+200 OK
+
+500 InternalServerError
+
+## Add new Application
+
+### Resource Details
+
+POST /1.x/applications 
+
+Creates new application repositories in 'dev' and 'prod' environments. Application name specified in body.
+
+### Example Request
+
+    POST /1.x/applications
+    
+    {"name": "myapp"}
+    
+### Example Response
+
+    {
+      "repositories": [
+          "myapp-dev",
+          "myapp-prod"
+      ]
+    }
+
+### Response Codes
+
+200 OK
+
+409 CONFLICT - Application name already exists.
+
+500 InternalServerError
