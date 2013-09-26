@@ -2,6 +2,7 @@
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file make-reader]]
             [clojure.tools.logging :refer [info warn error]]
+            [clj-http.client :as client]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
             [clojure.string :refer [upper-case]]
@@ -216,3 +217,30 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     true
     (catch Exception e
       false)))
+
+(defn- get-repo-list-url
+  []
+  (str (env :service-snc-api-base-url)
+       "projects/tyranitar/repositories?api_username="
+       (env :service-snc-api-username)
+       "&api_secret="
+       (env :service-snc-api-secret)))
+
+(defn- get-repo-list-from-snc
+  []
+  (let [response (client/get (get-repo-list-url) {:as :json :throw-exceptions false})
+        qwe (prn response)
+        body (:body response)]
+    body))
+
+(defn- filter-by-env
+  [env list]
+  (filter #(.endsWith % env) list))
+
+(defn get-repository-list
+  "Returns a list of all repositories that exist in the tyranitar git SNC project."
+  ([]
+     (let [list (get-repo-list-from-snc)]
+       (sort (map :name list))))
+  ([env]
+     (filter-by-env env (get-repository-list))))

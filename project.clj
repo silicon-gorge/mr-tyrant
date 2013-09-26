@@ -55,8 +55,12 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
+
         :service-base-git-repository-url "ssh://snc@source.nokia.com/tyranitar/git/"
-        :service-base-git-repository-path "/tmp/repos/"}
+        :service-base-git-repository-path "/tmp/repos/"
+        :service-snc-api-base-url "https://source.nokia.com/api/v2/"
+        :service-snc-api-username "mdaley"
+        :service-snc-api-secret "45186ed1acb4a8f9f5d0ff8f700eb1f7"}
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}

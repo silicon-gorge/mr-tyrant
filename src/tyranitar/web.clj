@@ -58,6 +58,14 @@
     (error-response (str "Application '" app "' does not exist.") 404)))
 
 (defroutes applications-routes
+  (GET "/"
+       []
+       (response {:repositories (git/get-repository-list)} json-content-type))
+
+  (GET ["/:env" :env env-regex]
+       [env]
+       (response {:repositories (git/get-repository-list env)} json-content-type))
+
   (GET ["/:env/:app" :env env-regex]
        [env app]
        (get-list env app))
