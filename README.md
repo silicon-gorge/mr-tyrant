@@ -190,6 +190,8 @@ Returns a list of all the applications which have repositories configured in any
     
 ### Example Response
 
+    200 OK
+    Content-Type: application/json; charset=utf-8
     {
       "repositories": [
           "skeleton-dev",
@@ -220,6 +222,8 @@ Returns a list of all the applications which have repositories in the specified 
     
 ### Example Response
 
+    200 OK
+    Content-Type: application/json; charset=utf-8
     {
       "repositories": [
           "skeleton-dev",
@@ -250,6 +254,8 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
     
 ### Example Response
 
+    200 OK
+    Content-Type: application/json; charset=utf-8
     {
       "repositories": [
           "myapp-dev",
