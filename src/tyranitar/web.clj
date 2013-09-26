@@ -4,6 +4,7 @@
   (:require [compojure.core :refer [defroutes context GET PUT POST DELETE]]
             [compojure.route :as route]
             [compojure.handler :as handler]
+            [cheshire.core :as cheshire]
             [ring.middleware.format-response :refer [wrap-json-response]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
@@ -57,10 +58,19 @@
     (response result json-content-type 200)
     (error-response (str "Application '" app "' does not exist.") 404)))
 
+(defn- create-application
+  [body]
+  (let [data (cheshire/parse-string (slurp body) true)]
+    (git/create-application (:name data))))
+
 (defroutes applications-routes
   (GET "/"
        []
        (response {:repositories (git/get-repository-list)} json-content-type))
+
+  (POST "/"
+        {body :body}
+        (response (create-application body) json-content-type))
 
   (GET ["/:env" :env env-regex]
        [env]

@@ -218,8 +218,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (catch Exception e
       false)))
 
-(defn- get-repo-list-url
-  []
+(def snc-url
   (str (env :service-snc-api-base-url)
        "projects/tyranitar/repositories?api_username="
        (env :service-snc-api-username)
@@ -228,7 +227,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- get-repo-list-from-snc
   []
-  (let [response (client/get (get-repo-list-url) {:as :json :throw-exceptions false})
+  (let [response (client/get snc-url {:as :json :throw-exceptions false})
         qwe (prn response)
         body (:body response)]
     body))
@@ -244,3 +243,24 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
        (sort (map :name list))))
   ([env]
      (filter-by-env env (get-repository-list))))
+
+(defn- repo-create-body
+  [name env]
+  (let [repo-name (str name "-" env)]
+      (str "repository[name]=" repo-name "&repository[kind]=Git")))
+
+(defn- create-repository
+  [name env]
+  (let [response (client/post snc-url {:body (repo-create-body name env)
+                                       :content-type "application/x-www-form-urlencoded"
+                                       :throw-exceptions false})
+        status (:status response)]
+    (when (not= status 200)
+      (throw (RuntimeException. (str "Couldn't create repository. SNC returned status " status))))))
+
+(defn create-application
+  [name]
+  (create-repository name "dev")
+  (create-repository name "prod")
+  {:repositories [(str name "-dev")
+                  (str name "-prod")]})
