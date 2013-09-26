@@ -89,7 +89,7 @@ configuration data for the specific application _{app-name}_. It only returns th
 
 ### Example Request
 
-    GET http://tyranitor.ent.nokia.com:8080/1.x/applications/prod/subscriptions
+    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/prod/subscriptions
 
 ### Example Response
 
@@ -144,7 +144,7 @@ GIT hash may be used.
 
 ### Example Request
 
-    GET http://tyranitar.ent.nokia.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
+    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
 
 ### Example Response
 
@@ -173,8 +173,6 @@ GIT hash may be used.
 404 NotFound
 
 500 InternalServerError
-  
-**************************************
 
 ## Obtain List of All Applications
 
@@ -186,7 +184,7 @@ Returns a list of all the applications which have repositories configured in any
 
 ### Example Request
 
-    GET /1.x/applications
+    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
     
 ### Example Response
 
@@ -218,7 +216,7 @@ Returns a list of all the applications which have repositories in the specified 
 
 ### Example Request
 
-    GET /1.x/applications/dev
+    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/dev
     
 ### Example Response
 
@@ -248,7 +246,7 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
 
 ### Example Request
 
-    POST /1.x/applications
+    POST http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
     
     {"name": "myapp"}
     
