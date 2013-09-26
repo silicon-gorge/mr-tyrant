@@ -103,7 +103,7 @@
    (GET "/icon" []
         {:status 200
          :headers {"Content-Type" "image/jpeg"}
-         :body (-> (clojure.java.io/resource "tyranitar.jpg")
+         :body (-> (clojure.java.io/resource "/tyranitar.jpg")
                    (.getFile)
                    (java.io.FileInputStream.))})
 
