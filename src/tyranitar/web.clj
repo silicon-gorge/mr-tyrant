@@ -104,8 +104,7 @@
         {:status 200
          :headers {"Content-Type" "image/jpeg"}
          :body (-> (clojure.java.io/resource "tyranitar.jpg")
-                   (.getFile)
-                   (java.io.FileInputStream.))})
+                   (clojure.java.io/input-stream))})
 
    (context "/applications"
             [] applications-routes))
