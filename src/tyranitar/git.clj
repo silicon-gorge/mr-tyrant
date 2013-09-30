@@ -265,14 +265,14 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn copy-file
   [resource-name dest-path]
-  (let [source (resource resource-name)
-        dest (file dest-path)]
+  (let [source (as-file (resource resource-name))
+        dest (as-file dest-path)]
     (copy source dest)))
 
 (defn- write-default-properties
   [repo-name]
   (let [repo-path (repo-path repo-name)]
-    (copy-file "application-properties.json")))
+    (copy-file "application-properties.json" "/tmp/wibble.json")))
 
 (defn- commit-and-push
   [repo-name])
