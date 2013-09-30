@@ -1,6 +1,6 @@
 (ns tyranitar.git
   (:require [environ.core :refer [env]]
-            [clojure.java.io :refer [as-file make-reader]]
+            [clojure.java.io :refer [as-file make-reader copy file resource]]
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
             [clj-time.coerce :refer [from-long]]
@@ -90,6 +90,10 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         jsch))))
 
 (SshSessionFactory/setInstance my-jcs-factory)
+
+(defn- repo-name
+  [application env]
+  (str application "-" env))
 
 (defn- repo-url
   [repo-name]
@@ -185,7 +189,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn get-data
    "Fetches the data corresponding to the given params from GIT"
   [env app commit category]
-  (let [repo-name (str app "-" env)]
+  (let [repo-name (repo-name app env)]
     (try
       (ensure-repo-up-to-date repo-name)
       (get-exact-commit repo-name category (upper-case commit))
@@ -202,7 +206,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn get-list
   "Get a list of the 20 most recent commits to the repository in most recent first order."
   [env app]
-  (let [repo-name (str app "-" env)]
+  (let [repo-name (repo-name app env)]
     (try
       (ensure-repo-up-to-date repo-name)
       (get-recent-commits-list repo-name)
@@ -247,7 +251,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- repo-create-body
   [name env]
-  (let [repo-name (str name "-" env)]
+  (let [repo-name (repo-name name env)]
       (str "repository[name]=" repo-name "&repository[kind]=Git")))
 
 (defn- create-repository
@@ -259,9 +263,29 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (when (not= status 200)
       (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
 
+(defn copy-file
+  [resource-name dest-path]
+  (let [source (resource resource-name)
+        dest (file dest-path)]
+    (copy source dest)))
+
+(defn- write-default-properties
+  [repo-name]
+  (let [repo-path (repo-path repo-name)]
+    (copy-file "application-properties.json")))
+
+(defn- commit-and-push
+  [repo-name])
+
 (defn create-application
   [name]
   (create-repository name "dev")
   (create-repository name "prod")
-  {:repositories [(str name "-dev")
-                  (str name "-prod")]})
+  (clone-repo (repo-name name "dev"))
+  (clone-repo (repo-name name "prod"))
+  (write-default-properties (repo-name name "dev"))
+  (write-default-properties (repo-name name "prod"))
+  (commit-and-push (repo-name name "dev"))
+  (commit-and-push (repo-name name "prod"))
+  {:repositories [(repo-name name "dev")
+                  (repo-name name "prod")]})
