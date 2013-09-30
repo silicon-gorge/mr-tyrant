@@ -41,7 +41,7 @@
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
 (def version
-  (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/userhistorytyranitar/tyranitar/pom.properties")]
+  (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/tyranitar/tyranitar/pom.properties")]
            ((read-file-to-properties path) "version")
            "localhost")))
 
