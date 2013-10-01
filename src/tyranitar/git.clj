@@ -95,6 +95,8 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [application env]
   (str application "-" env))
 
+(repo-name "test4" "dev")
+
 (defn- repo-url
   [repo-name]
   (str base-git-url repo-name))
@@ -263,29 +265,53 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (when (not= status 200)
       (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
 
-(defn copy-file
+(defn- copy-file
   [resource-name dest-path]
   (let [source (as-file (resource resource-name))
         dest (as-file dest-path)]
     (copy source dest)))
 
+(defn- copy-properties-file
+  [name repo-path]
+  (copy-file name (str repo-path "/" name)))
+
 (defn- write-default-properties
   [repo-name]
   (let [repo-path (repo-path repo-name)]
-    (copy-file "application-properties.json" "/tmp/wibble.json")))
+    (copy-properties-file "application-properties.json" repo-path)
+    (copy-properties-file "deployment-params.json" repo-path)
+    (copy-properties-file "launch-data.json" repo-path)))
 
 (defn- commit-and-push
-  [repo-name])
+  [repo-name]
+  (let [git (Git/open (as-file (repo-path repo-name)))
+        add (.add git)
+        commit (.commit git)
+        push (.push git)]
+    (->
+     add
+     (.addFilepattern ".")
+     (.call))
+    (->
+     commit
+     (.setAuthor "tyranitar" "noreply@nokia.com")
+     (.setMessage "Initial properties files.")
+     (.call))
+    (->
+     push
+     (.call))
+    ))
+
+(defn- create-application-env
+  [name env]
+  (let [repo-name (repo-name name env)]
+    (create-repository name env)
+    (clone-repo repo-name)
+    (write-default-properties repo-name)
+    (commit-and-push repo-name)
+    {:name repo-name :path (repo-url repo-name)}))
 
 (defn create-application
   [name]
-  (create-repository name "dev")
-  (create-repository name "prod")
-  (clone-repo (repo-name name "dev"))
-  (clone-repo (repo-name name "prod"))
-  (write-default-properties (repo-name name "dev"))
-  (write-default-properties (repo-name name "prod"))
-  (commit-and-push (repo-name name "dev"))
-  (commit-and-push (repo-name name "prod"))
-  {:repositories [(repo-name name "dev")
-                  (repo-name name "prod")]})
+  {:repositories [(create-application-env name "dev")
+                  (create-application-env name "prod")]})
