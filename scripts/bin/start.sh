@@ -10,14 +10,13 @@ then
   exit 1
 fi
 
-SERVICE_HOME=/usr/local/${SERVICE_NAME}
 JETTY_HOME=/usr/local/jetty
 JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
 LOG_FILE=$JETTY_HOME/log/jetty.log
 ERR_FILE=$JETTY_HOME/log/jetty.err
 
 IFS="$(echo -e "\n\r")"
-for LINE in `cat ${SERVICE_HOME}/etc/${AWSENV}.properties`
+for LINE in `cat /etc/${SERVICE_NAME}.properties`
 do
   case $LINE in
     \#*) ;;
@@ -41,13 +40,13 @@ statusUrl=http://localhost:$SERVICE_PORT$STATUS_PATH
 waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
-  
+
 echo "Giving Jetty $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
 
-until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -eq 200 ]  
+until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -eq 200 ]
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
