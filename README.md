@@ -68,10 +68,10 @@ application/environment combination in latest-first order)
 GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set} (returns a specific set of
 properties for this application/environment combination at the specified commit level)
 
-GET /1.x/applications (returns a list of all the applications which have repositories in 
+GET /1.x/applications (returns a list of all the applications which have repositories in
 any environment).
 
-GET /1.x/applications/{env} (returns a list of all the applications which have repositories 
+GET /1.x/applications/{env} (returns a list of all the applications which have repositories
 in the specified environment).
 
 POST /1.x/applications (creates new application repositories in 'dev' and 'prod' environments.
@@ -177,15 +177,15 @@ GIT hash may be used.
 ## Obtain List of All Applications
 
 ### Resource Details
-  
-GET /1.x/applications 
+
+GET /1.x/applications
 
 Returns a list of all the applications which have repositories configured in any environment.
 
 ### Example Request
 
     GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
-    
+
 ### Example Response
 
     200 OK
@@ -210,14 +210,14 @@ Returns a list of all the applications which have repositories configured in any
 
 ### Resource Details
 
-GET /1.x/applications/{env} 
+GET /1.x/applications/{env}
 
 Returns a list of all the applications which have repositories in the specified environment.
 
 ### Example Request
 
     GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/dev
-    
+
 ### Example Response
 
     200 OK
@@ -240,24 +240,30 @@ Returns a list of all the applications which have repositories in the specified 
 
 ### Resource Details
 
-POST /1.x/applications 
+POST /1.x/applications
 
 Creates new application repositories in 'dev' and 'prod' environments. Application name specified in body.
 
 ### Example Request
 
     POST http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
-    
+
     {"name": "myapp"}
-    
+
 ### Example Response
 
     200 OK
     Content-Type: application/json; charset=utf-8
     {
       "repositories": [
-          "myapp-dev",
-          "myapp-prod"
+        {
+          "name" : "myapp-dev",
+          "path" : "ssh://snc@source.nokia.com/tyranitar/git/myapp-dev"
+        },
+        {
+          "name" : "myapp-prod",
+          "path" : "ssh://snc@source.nokia.com/tyranitar/git/myapp-prod"
+        }
       ]
     }
 
