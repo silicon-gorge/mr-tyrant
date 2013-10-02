@@ -1,4 +1,4 @@
-(defproject tyranitar "0.18"
+(defproject tyranitar "0.19-SNAPSHOT"
   :description "Tyranitar service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Tyranitar"
 
