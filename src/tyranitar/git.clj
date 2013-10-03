@@ -266,7 +266,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- copy-file
   [resource-name dest-path]
-  (spit dest-path (resource resource-name)))
+  (spit dest-path (slurp (resource resource-name))))
 
 (defn- copy-properties-file
   [name repo-path]
