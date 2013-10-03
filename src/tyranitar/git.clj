@@ -95,8 +95,6 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [application env]
   (str application "-" env))
 
-(repo-name "test4" "dev")
-
 (defn- repo-url
   [repo-name]
   (str base-git-url repo-name))
