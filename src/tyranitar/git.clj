@@ -233,9 +233,10 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn- get-repo-list-from-snc
   []
   (let [response (client/get snc-url {:as :json :throw-exceptions false})
-        qwe (prn response)
         body (:body response)]
     body))
+
+(get-repo-list-from-snc)
 
 (defn- filter-by-env
   [env list]
@@ -265,9 +266,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- copy-file
   [resource-name dest-path]
-  (let [source (as-file (resource resource-name))
-        dest (as-file dest-path)]
-    (copy source dest)))
+  (spit dest-path (resource resource-name)))
 
 (defn- copy-properties-file
   [name repo-path]
