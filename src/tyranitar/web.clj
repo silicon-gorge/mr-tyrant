@@ -63,13 +63,13 @@
   [body]
   (let [data (cheshire/parse-string (slurp body) true)]
     (try+
-     (response (git/create-application (:name data)) json-content-type)
+     (response (git/create-application (:name data)) json-content-type 201)
      (catch [:status 422] e (error-response (str "Could not create application '" (:name data) "', message: " (:message e)) 409)))))
 
 (defroutes applications-routes
   (GET "/"
        []
-       (response {:repositories (git/get-repository-list)} json-content-type))
+       (response {:applications (git/get-repository-list)} json-content-type))
 
   (POST "/"
         {body :body}
@@ -77,7 +77,7 @@
 
   (GET ["/:env" :env env-regex]
        [env]
-       (response {:repositories (git/get-repository-list env)} json-content-type))
+       (response {:applications (git/get-repository-list env)} json-content-type))
 
   (GET ["/:env/:app" :env env-regex]
        [env app]

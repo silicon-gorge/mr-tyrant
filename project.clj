@@ -23,7 +23,8 @@
                  [nokia/ring-utils "1.0.1"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
-                 [org.eclipse.jgit "3.0.0.201306101825-r"]]
+                 [org.eclipse.jgit "3.0.0.201306101825-r"]
+                 [me.raynes/conch "0.5.0"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop

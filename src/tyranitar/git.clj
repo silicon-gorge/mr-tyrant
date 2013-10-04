@@ -5,9 +5,10 @@
             [clj-http.client :as client]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
-            [clojure.string :refer [upper-case]]
+            [clojure.string :refer [upper-case split]]
             [cheshire.core :refer [parse-string]]
-            [slingshot.slingshot :refer [try+ throw+]])
+            [slingshot.slingshot :refer [try+ throw+]]
+            [me.raynes.conch :as conch])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
@@ -91,6 +92,8 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (SshSessionFactory/setInstance my-jcs-factory)
 
+(conch/programs rm)
+
 (defn- repo-name
   [application env]
   (str application "-" env))
@@ -106,6 +109,8 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn clone-repo
   "Clones the latest version of the specified repo from GIT."
   [repo-name]
+  (info "First ensuring that repository directory does not exist")
+  (rm "-rf" (repo-path repo-name))
   (info "Cloning repository to" (repo-path repo-name))
   (->
    (Git/cloneRepository)
@@ -230,25 +235,36 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
        "&api_secret="
        (env :service-snc-api-secret)))
 
+(defn- data-from-repo-item
+  [item]
+  (let [name (:name item)
+        name-parts (split name #"-")
+        app-name (first name-parts)
+        env (second name-parts)
+        access-methods (:access_methods item)
+        ssh-repo-path (:uri (first (filterv #(= (:method %) "ssh") access-methods)))]
+    {:app app-name :env env :name name :path ssh-repo-path}))
+
 (defn- get-repo-list-from-snc
   []
   (let [response (client/get snc-url {:as :json :throw-exceptions false})
         body (:body response)]
     body))
 
-(get-repo-list-from-snc)
-
-(defn- filter-by-env
-  [env list]
-  (filter #(.endsWith % env) list))
+(defn- process-repository-list
+  "Process the list of data returned from SNC into the form that we want."
+  [list]
+  (let [data (map data-from-repo-item list)
+        grouped-app-list (group-by :app data)
+        result (into {} (map (fn [[k v]] {(keyword k) {:repositories (mapv #(dissoc % :app :env) v)}}) grouped-app-list))]
+    result))
 
 (defn get-repository-list
   "Returns a list of all repositories that exist in the tyranitar git SNC project."
   ([]
-     (let [list (get-repo-list-from-snc)]
-       (sort (map :name list))))
+     (process-repository-list (get-repo-list-from-snc)))
   ([env]
-     (filter-by-env env (get-repository-list))))
+     (process-repository-list (filter #(.endsWith (:name %) env) (get-repo-list-from-snc)))))
 
 (defn- repo-create-body
   [name env]
