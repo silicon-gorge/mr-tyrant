@@ -89,7 +89,7 @@ configuration data for the specific application _{app-name}_. It only returns th
 
 ### Example Request
 
-    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/prod/subscriptions
+    GET http://tyranitar.brislabs.com:8080/1.x/applications/prod/subscriptions
 
 ### Example Response
 
@@ -144,7 +144,7 @@ GIT hash may be used.
 
 ### Example Request
 
-    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
+    GET http://tyranitar.brislabs.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
 
 ### Example Response
 
@@ -184,20 +184,51 @@ Returns a list of all the applications which have repositories configured in any
 
 ### Example Request
 
-    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
+    GET http://tyranitar.brislabs.com:8080/1.x/applications
 
 ### Example Response
 
     200 OK
     Content-Type: application/json; charset=utf-8
     {
-      "repositories": [
-          "skeleton-dev",
-          "test-dev",
-          "test-prod",
-          "test1-dev",
-          "test1-prod"
-      ]
+      "applications":{
+        "tyranitar":{
+          "repositories":[
+            {
+              "name":"tyranitar-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-dev"
+            },
+            {
+              "name":"tyranitar-prod",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-prod"
+            }
+          ]
+        },
+        "ditto":{
+          "repositories":[
+            {
+              "name":"ditto-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-dev"
+            },
+            {
+              "name":"ditto-prod",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-prod"
+            }
+          ]
+        },
+        "onix":{
+          "repositories":[
+            {
+              "name":"onix-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-dev"
+            },
+            {
+              "name":"onix-prod",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-prod"
+            }
+          ]
+        }
+      }
     }
 
 ### Response Codes
@@ -216,18 +247,39 @@ Returns a list of all the applications which have repositories in the specified 
 
 ### Example Request
 
-    GET http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications/dev
+    GET http://tyranitar.brislabs.com:8080/1.x/applications/dev
 
 ### Example Response
 
     200 OK
     Content-Type: application/json; charset=utf-8
     {
-      "repositories": [
-          "skeleton-dev",
-          "test-dev",
-          "test1-dev",
-      ]
+      "applications":{
+        "tyranitar":{
+          "repositories":[
+            {
+              "name":"tyranitar-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-dev"
+            }
+          ]
+        },
+        "ditto":{
+          "repositories":[
+            {
+              "name":"ditto-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-dev"
+            }
+          ]
+        },
+        "onix":{
+          "repositories":[
+            {
+              "name":"onix-dev",
+              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-dev"
+            }
+          ]
+        }
+      }
     }
 
 ### Response Codes
@@ -246,13 +298,13 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
 
 ### Example Request
 
-    POST http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080/1.x/applications
+    POST http://tyranitar.brislabs.com:8080/1.x/applications
 
     {"name": "myapp"}
 
 ### Example Response
 
-    200 OK
+    201 CREATED
     Content-Type: application/json; charset=utf-8
     {
       "repositories": [
