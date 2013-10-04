@@ -69,4 +69,18 @@
                body (read-body response)
                first-commit-id (:hash (first (:commits body)))]
            response => (contains {:status 200})
-           first-commit-id => latest-commit-id)))
+           first-commit-id => latest-commit-id))
+
+   (fact "Can list applications and this list has the right format"
+         (let [list (client/get (url+ "/applications"))
+               list-body (read-body list)
+               tyranitar (:tyranitar (:applications list-body))
+               tyranitar-dev-repo-name (:name (first (:repositories tyranitar)))]
+           tyranitar-dev-repo-name => "tyranitar-dev"))
+
+   (fact "Can list applications in particular environment with right format"
+         (let [list (client/get (url+ "/applications/prod"))
+               list-body (read-body list)
+               tyranitar (:tyranitar (:applications list-body))
+               tyranitar-prod-repo-name (:name (first (:repositories tyranitar)))]
+           tyranitar-prod-repo-name => "tyranitar-prod")))
