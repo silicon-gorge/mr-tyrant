@@ -1,37 +1,9 @@
 {
-   "azRebalance" : "enabled",
-   "canaryAssessmentDurationMinutes" : 60,
-   "canaryCapacity" : 1,
-   "canaryStartUpTimeoutMinutes" : 30,
-   "clusterName" : "tyranitar",
-   "defaultCooldown" : 10,
-   "delayDurationMinutes" : 0,
-   "deletePreviousAsg" : "Yes",
-   "desiredCapacity" : 1,
-   "desiredCapacityAssesmentDurationMinutes" : 5,
-   "desiredCapacityStartUpTimeoutMinutes" : 5,
-   "disablePreviousAsg" : "Yes",
-   "doCanary" : false,
-   "fullTrafficAssessmentDurationMinutes" : 5,
-   "healthCheckGracePeriod" : 600,
-   "healthCheckType" : "EC2",
-   "iamInstanceProfile" : "tyranitar",
-   "instanceType" : "t1.micro",
-   "kernelId" : "",
-   "keyName" : "bakins-key",
-   "max" : 1,
-   "min" : 1,
-   "name" : "tyranitar",
-   "noOptionalDefaults" : true,
-   "notificationDestination" : "matthew.daley@nokia.com",
-   "pricing" : "ON_DEMAND",
-   "ramdiskId" : "",
-   "scaleUp" : "Yes",
-   "selectedLoadBalancersForVpcIdvpc-7bc88713" : "tyranitar",
+   "healthCheckType" : "ELB",
+   "notificationDestination" : "contact.email@nokia.com",
+   "selectedLoadBalancers" : "{{app-name}}",
    "selectedSecurityGroups" : [
-      "sg-f607ef99",
-      "sg-c453b4ab"
-   ],
-   "subnetPurpose" : "internal",
-   "terminationPolicy" : "Default"
+      "{{app-name}}",
+      "Brislabs-SSH"
+   ]
 }

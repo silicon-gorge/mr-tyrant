@@ -13,8 +13,6 @@
                  [org.slf4j/slf4j-api "1.7.5"]
                  [org.slf4j/jul-to-slf4j "1.7.5"]
                  [ch.qos.logback/logback-classic "1.0.13"]
-;                 [com.ovi.common.logging/logback-appender "0.0.45"]
-;                 [com.yammer.metrics/metrics-logback "2.2.0"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.21"]
                  [clj-http "0.7.6"]
                  [cheshire "5.2.0"]
@@ -24,7 +22,8 @@
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
                  [org.eclipse.jgit "3.0.0.201306101825-r"]
-                 [me.raynes/conch "0.5.0"]]
+                 [me.raynes/conch "0.5.0"]
+                 [de.ubercode.clostache/clostache "1.3.1"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop

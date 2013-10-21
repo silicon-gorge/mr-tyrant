@@ -1,4 +1,1 @@
-[
-  "echo \"Launch data script\"",
-  "service jetty start"
-]
+[]

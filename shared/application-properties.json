@@ -1,7 +1,6 @@
 {
-    "dynamo.endpoint" : "http://dynamodb.eu.west.1.amazonaws.com",
-    "environment.name" : "dev",
-    "service.name" : "tyranitar",
+    "environment.name" : "{{env-name}}",
+    "service.name" : "{{app-name}}",
     "service.port" : "8080",
     "service.url" :  "http://localhost:%s/1.x",
     "environment.entertainment.graphite.host" : "graphite.brislabs.com",

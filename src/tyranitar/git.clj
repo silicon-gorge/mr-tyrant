@@ -8,7 +8,8 @@
             [clojure.string :refer [upper-case split]]
             [cheshire.core :refer [parse-string]]
             [slingshot.slingshot :refer [try+ throw+]]
-            [me.raynes.conch :as conch])
+            [me.raynes.conch :as conch]
+            [clostache.parser :as templates])
   (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
@@ -102,7 +103,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [repo-name]
   (str base-git-url repo-name))
 
-(defn- repo-path
+(defn repo-path
   [name]
   (str base-git-path name))
 
@@ -280,20 +281,23 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (when (not= status 200)
       (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
 
-(defn- copy-file
-  [resource-name dest-path]
-  (spit dest-path (slurp (resource resource-name))))
-
-(defn- copy-properties-file
-  [name repo-path]
-  (copy-file name (str repo-path "/" name)))
+(defn write-templated-properties
+  "Substitutes the application name for placeholders in the given template and writes the file."
+  [app-name template env]
+  (let [repo-path (repo-path (repo-name app-name env))
+        data {:app-name app-name :env-name env}
+        dest-path (str repo-path "/" template)]
+    (->>
+     (templates/render-resource template data)
+     (spit dest-path))))
 
 (defn- write-default-properties
-  [repo-name]
-  (let [repo-path (repo-path repo-name)]
-    (copy-properties-file "application-properties.json" repo-path)
-    (copy-properties-file "deployment-params.json" repo-path)
-    (copy-properties-file "launch-data.json" repo-path)))
+  "Writes a default set of service properties to the GIT repo file location."
+  [app-name env]
+  (let [repo-path (repo-path (repo-name app-name env))]
+    (write-templated-properties app-name "application-properties.json" env)
+    (write-templated-properties app-name "deployment-params.json" env)
+    (write-templated-properties app-name "launch-data.json" env)))
 
 (defn- commit-and-push
   [repo-name]
@@ -320,7 +324,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   (let [repo-name (repo-name name env)]
     (create-repository name env)
     (clone-repo repo-name)
-    (write-default-properties repo-name)
+    (write-default-properties name env)
     (commit-and-push repo-name)
     {:name repo-name :path (repo-url repo-name)}))
 
