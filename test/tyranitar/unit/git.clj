@@ -13,11 +13,18 @@
      (= name (:selectedLoadBalancers props))
      (= name (first (:selectedSecurityGroups props))))))
 
+(defn is-correct-val-for-env
+  [env val]
+  (if (= "prod" env)
+    (= "true" val)
+    (= "false" val)))
+
 (defn check-app-props
   [props template-params]
   (and
    (= (:env template-params) (:environment.name props))
-   (= (:name template-params) (:service.name props))))
+   (= (:name template-params) (:service.name props))
+   (is-correct-val-for-env (:env template-params) (:service.production props))))
 
 (defn property-values-are-correctly-templated
   [params f]
@@ -42,10 +49,18 @@
                                                                   (provided
                                                                    (repo-path anything) => dummy-repo-path))
 
-                   (fact "Template values are correctly substituted in application properties."
+                   (fact "Template values are correctly substituted in dev application properties."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "application-properties.json"
                                                                    :env "dev"}
+                                                                  check-app-props) => true
+                                                                  (provided
+                                                                   (repo-path anything) => dummy-repo-path))
+
+                    (fact "Template values are correctly substituted in prod application properties."
+                         (property-values-are-correctly-templated {:name "test"
+                                                                   :template "application-properties.json"
+                                                                   :env "prod"}
                                                                   check-app-props) => true
                                                                   (provided
                                                                    (repo-path anything) => dummy-repo-path))))

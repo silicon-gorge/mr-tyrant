@@ -285,7 +285,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   "Substitutes the application name for placeholders in the given template and writes the file."
   [app-name template env]
   (let [repo-path (repo-path (repo-name app-name env))
-        data {:app-name app-name :env-name env}
+        data {:app-name app-name :env-name env :is-prod (= "prod" env)}
         dest-path (str repo-path "/" template)]
     (->>
      (templates/render-resource template data)
