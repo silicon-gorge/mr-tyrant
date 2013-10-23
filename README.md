@@ -77,6 +77,9 @@ in the specified environment).
 POST /1.x/applications (creates new application repositories in 'dev' and 'prod' environments.
 Application name specified in body).
 
+POST /1.x/applications/{env}/{app-name}/{properties-set} (adds/updates properties specified in 
+body to the given properties-set).
+
 ## List Commits
 
 ### Resource Details
@@ -324,5 +327,49 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
 200 OK
 
 409 CONFLICT - Application name already exists.
+
+500 InternalServerError
+
+## Update Application Properties
+
+## Resource Details
+
+POST /1.x/applications/{env}/{app-name}/{properties-set}
+
+Updates the given properties-set for the given application in the given environment with the property
+name/value pairs in the request body.
+
+### Example Request
+
+    POST http://tyranitar.brislabs.com:8080/1.x/applications/dev/myapp/application-properties
+
+    {
+      "service.asg.min": "1",
+      "service.asg.max": "3",
+      "service.asg.preferred": "2"
+    }
+    
+### Example Response
+
+    200 OK
+    Content-Type: application/json; charset=utf-8
+    {
+      "hash" : "d78f553564f10b4931dab2627c46af3db2ae1b22",
+      "data" : {
+        "graphite-host" :  "graphite.brislabs.com",
+        "graphite-port" : "8080",
+        "service.asg.max": "3",
+        "service.asg.min": "1",
+        "service.asg.preferred": "2",
+        "service-name" : "wibble",
+        "service-port" : "8080",
+        "service-url":  "http://localhost:%s/1.x"
+      }
+      
+### Response Codes
+
+200 OK
+
+409 CONFLICT - Merge error updating GIT
 
 500 InternalServerError

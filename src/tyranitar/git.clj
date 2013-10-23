@@ -2,11 +2,11 @@
   (:require [environ.core :refer [env]]
             [clojure.java.io :refer [as-file make-reader copy file resource]]
             [clojure.tools.logging :refer [info warn error]]
-            [clj-http.client :as client]
+            [clj-http.client :as http]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
             [clojure.string :refer [upper-case split]]
-            [cheshire.core :refer [parse-string]]
+            [cheshire.core :refer [parse-string generate-string]]
             [slingshot.slingshot :refer [try+ throw+]]
             [me.raynes.conch :as conch]
             [clostache.parser :as templates])
@@ -248,7 +248,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- get-repo-list-from-snc
   []
-  (let [response (client/get snc-url {:as :json :throw-exceptions false})
+  (let [response (http/get snc-url {:as :json :throw-exceptions false})
         body (:body response)]
     body))
 
@@ -274,33 +274,38 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn- create-repository
   [name env]
-  (let [response (client/post snc-url {:body (repo-create-body name env)
-                                       :content-type "application/x-www-form-urlencoded"
-                                       :throw-exceptions false})
+  (let [response (http/post snc-url {:body (repo-create-body name env)
+                                     :content-type "application/x-www-form-urlencoded"
+                                     :throw-exceptions false})
         status (:status response)]
     (when (not= status 200)
       (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
 
+(defn dest-path
+  "Gets the file path in the repo to write to for the given params."
+  [app-name env category]
+  (let [repo-path (repo-path (repo-name app-name env))]
+    (str repo-path "/" category ".json")))
+
 (defn write-templated-properties
   "Substitutes the application name for placeholders in the given template and writes the file."
   [app-name template env]
-  (let [repo-path (repo-path (repo-name app-name env))
-        data {:app-name app-name :env-name env :is-prod (= "prod" env)}
-        dest-path (str repo-path "/" template)]
+  (let [data {:app-name app-name :env-name env :is-prod (= "prod" env)}
+        dest-path (dest-path app-name env template)]
     (->>
-     (templates/render-resource template data)
+     (templates/render-resource (str template ".json") data)
      (spit dest-path))))
 
 (defn- write-default-properties
   "Writes a default set of service properties to the GIT repo file location."
   [app-name env]
   (let [repo-path (repo-path (repo-name app-name env))]
-    (write-templated-properties app-name "application-properties.json" env)
-    (write-templated-properties app-name "deployment-params.json" env)
-    (write-templated-properties app-name "launch-data.json" env)))
+    (write-templated-properties app-name "application-properties" env)
+    (write-templated-properties app-name "deployment-params" env)
+    (write-templated-properties app-name "launch-data" env)))
 
-(defn- commit-and-push
-  [repo-name]
+(defn commit-and-push
+  [repo-name message]
   (let [git (Git/open (as-file (repo-path repo-name)))
         add (.add git)
         commit (.commit git)
@@ -312,7 +317,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (->
      commit
      (.setAuthor "tyranitar" "noreply@nokia.com")
-     (.setMessage "Initial properties files.")
+     (.setMessage message)
      (.call))
     (->
      push
@@ -325,10 +330,20 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (create-repository name env)
     (clone-repo repo-name)
     (write-default-properties name env)
-    (commit-and-push repo-name)
+    (commit-and-push repo-name "Initial properties files.")
     {:name repo-name :path (repo-url repo-name)}))
 
 (defn create-application
   [name]
   {:repositories [(create-application-env name "dev")
                   (create-application-env name "prod")]})
+
+(defn update-properties
+  [app-name env category tokens]
+  (let [orig (get-data env app-name "head" category)
+        sorted (into (sorted-map) orig)
+        updated (merge sorted tokens)
+        dest-path (dest-path app-name env category)]
+    (spit dest-path (generate-string updated {:pretty true}))
+    (commit-and-push (repo-name app-name env) "Updated properties")
+    (get-data env app-name "head" category)))
