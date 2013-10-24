@@ -339,6 +339,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
                   (create-application-env name "prod")]})
 
 (defn update-properties
+  "Adds or updates the given properties in the given app, env and category."
   [app-name env category tokens]
   (let [orig (get-data env app-name "head" category)
         sorted (into (sorted-map) orig)

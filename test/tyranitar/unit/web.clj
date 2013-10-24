@@ -2,18 +2,22 @@
   (:require [cheshire.core :as json]
             [tyranitar.git :as git])
   (:use [tyranitar.web]
-        [midje.sweet]))
+        [midje.sweet])
+  (:import [org.eclipse.jgit.api.errors GitAPIException InvalidRemoteException]))
 
 (defn request
-  [method resource & {:as others}]
-  (routes (merge {:request-method method
-                  :uri resource} (update-in others [:body]
-                                         #(java.io.ByteArrayInputStream.
-                                           (.getBytes (json/generate-string %)))))))
-
-(defn request [method resource]
-  (routes {:request-method method
-           :uri resource } ))
+  "Creates a compojure request map and applies it to our routes.
+   Accepts method, resource and optionally an extended map"
+  [method resource & [{:keys [params body]
+                       :or {:params {}}}]]
+  (let [body (-> body (json/generate-string) (.getBytes) (java.io.ByteArrayInputStream.))
+        {res-body :body :as res} (app {:request-method method
+                                       :uri resource
+                                       :body body
+                                       :params params})]
+    (cond-> res
+            (instance? java.io.InputStream res-body)
+            (assoc :body (json/parse-string (slurp res-body) true)))))
 
 (fact-group :unit
   (fact "Ping returns a pong"
@@ -66,7 +70,23 @@
         (provided
          (git/get-data "prod" "test" "head" "deployment-params") => []))
 
-    (fact "Getting launch-data works"
+  (fact "Getting launch-data works"
         (request :get "/1.x/applications/prod/test/head/launch-data") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "head" "launch-data") => [])))
+         (git/get-data "prod" "test" "head" "launch-data") => []))
+
+  (facts "****** About updating properties ******"
+
+         (fact "Updating properties is called with the correct params."
+               (request :post "/1.x/applications/dev/testapp/application-properties" {:body {:a "one" :b "two"}}) => (contains {:status 200})
+               (provided
+                (git/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
+                => {:dummy "value"}))
+
+         (fact "Git failure returns correct error response."
+               (request :post "/1.x/applications/dev/testapp/application-properties" {:body {:a "one" :b "two"}}) => (contains {:status 409})
+               (provided
+                (git/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
+                =throws=> (InvalidRemoteException. "GIT update failed!"))
+               )
+         ))
