@@ -27,7 +27,7 @@
 
 (def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
 
-(def env-regex #"dev|prod")
+(def env-regex #"dev|prod|poke")
 
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
@@ -102,8 +102,7 @@
 
   (POST ["/:env/:app/:category" :env env-regex :category category-regex]
         [env app category :as req]
-        (update-properties app env category (:body req)))
-  )
+        (update-properties app env category (:body req))))
 
 (defroutes routes
   (context
@@ -131,8 +130,7 @@
        (let [git-ok (git/git-connection-working)]
          (if git-ok
            (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8")
-           (response "I am unwell. Can't talk to remote git repository." "text/plain;charset=utf-8" 500)))
-       )
+           (response "I am unwell. Can't talk to remote git repository." "text/plain;charset=utf-8" 500))))
 
   (route/not-found (error-response "Resource not found" 404)))
 

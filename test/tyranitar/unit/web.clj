@@ -30,7 +30,10 @@
         (request :get "/healthcheck") => (contains {:status 200}))
 
   (fact "Invalid environment name results in not found response"
-        (request :get "/1.x/applications/wrongenv/test") => (contains {:status 404}))
+        (request :get "/1.x/applications/wrongenv") => (contains {:status 404}))
+
+  (fact "Environment name 'poke' is accepted."
+        (request :get "/1.x/applications/poke") => (contains {:status 200}))
 
   (fact "Get commits for application and dev environment works"
         (request :get "/1.x/applications/dev/test") => (contains {:status 200})
