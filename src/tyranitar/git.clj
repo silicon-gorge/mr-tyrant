@@ -157,7 +157,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         text-result (slurp (.openStream loader))]
     (info "Commit with hash" (.getName commit-id) "obtained")
     {:hash (.getName commit-id)
-     :data (parse-string text-result)}))
+     :data (parse-string text-result true)}))
 
 (defn- commit-to-map
   "Turns a commit object into a useful map."
@@ -338,13 +338,17 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   {:repositories [(create-application-env name "dev")
                   (create-application-env name "prod")]})
 
+(defn write-properties-file
+  "Writes the given properties to the appropriate local GIT file."
+  [app-name env category props]
+  (let [dest-path (dest-path app-name env category)]
+    (spit dest-path (generate-string props {:pretty true}))))
+
 (defn update-properties
   "Adds or updates the given properties in the given app, env and category."
   [app-name env category tokens]
   (let [orig (get-data env app-name "head" category)
-        sorted (into (sorted-map) orig)
-        updated (merge sorted tokens)
-        dest-path (dest-path app-name env category)]
-    (spit dest-path (generate-string updated {:pretty true}))
+        updated (into (sorted-map) (merge (:data orig) tokens))]
+    (write-properties-file app-name env category updated)
     (commit-and-push (repo-name app-name env) "Updated properties")
     (get-data env app-name "head" category)))

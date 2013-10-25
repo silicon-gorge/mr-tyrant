@@ -6,9 +6,10 @@
 
 (def dummy-repo-path "/tmp")
 
-(def dummy-data {:environment.stuff "stuffy"
-                 :service.main.thing "wibble"
-                 :service.other.thing "wobble"})
+(def dummy-data {:hash "d2d11ce2b4f6f0e96c3d80c1676c1ae4727c4939"
+                 :data {:environment.stuff "stuffy"
+                        :service.main.thing "wibble"
+                        :service.other.thing "wobble"}})
 
 (def update {:service.max.asg 3
              :service.min.asg 1

@@ -370,6 +370,6 @@ name/value pairs in the request body.
 
 200 OK
 
-409 CONFLICT - Merge error updating GIT
+409 CONFLICT - Error updating GIT
 
 500 InternalServerError
