@@ -335,7 +335,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (defn create-application
   [name]
-  {:repositories [(create-application-env name "dev")
+  {:repositories [(create-application-env name "poke")
                   (create-application-env name "prod")]})
 
 (defn write-properties-file
