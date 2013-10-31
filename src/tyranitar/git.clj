@@ -1,24 +1,20 @@
 (ns tyranitar.git
   (:require [environ.core :refer [env]]
-            [clojure.java.io :refer [as-file make-reader copy file resource]]
-            [clojure.tools.logging :refer [info warn error]]
-            [clj-http.client :as http]
+            [clojure.java.io :refer [as-file]]
+            [clojure.tools.logging :as log]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
-            [clojure.string :refer [upper-case split]]
-            [cheshire.core :refer [parse-string generate-string]]
-            [slingshot.slingshot :refer [try+ throw+]]
-            [me.raynes.conch :as conch]
-            [clostache.parser :as templates])
-  (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
+            [cheshire.core :refer [parse-string]]
+            [me.raynes.conch :as conch])
+  (:import [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
-           [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
            [org.eclipse.jgit.revwalk RevWalk]
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.transport JschConfigSessionFactory SshSessionFactory]
            [com.jcraft.jsch JSch]
-           [java.io FileNotFoundException ByteArrayInputStream]))
+           [java.io ByteArrayInputStream]))
 
+;; Reinstate this if you want low-level logging of GIT operations.
 ;; (def ^{:dynamic true}
 ;;   ssh-log-levels
 ;;   (atom
@@ -40,7 +36,7 @@
 
 ;; (JSch/setLogger (SshLogger. com.jcraft.jsch.Logger/DEBUG))
 
-;; The private key of the tyranitar-bot installed in SNC. Shouldn't change.
+; The private key of the tyranitar-bot installed in SNC. Shouldn't change.
 (def tyranitar-private-key
   "-----BEGIN RSA PRIVATE KEY-----
 MIIEoQIBAAKCAQEA0URSQjQT7uYXG42k3X9hvKPvD1SQQBRQImmoGRh2xBL8k7In
@@ -82,11 +78,11 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (def my-jcs-factory
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
-      (info "Configuring JschConfigSessionFactory.")
+      (log/info "Configuring JschConfigSessionFactory.")
       (.setConfig session "StrictHostChecking" "yes"))
     (createDefaultJSch [fs]
       (let [jsch (JSch.)]
-        (info "Creating default JSch using tyranitar private key and known-hosts.")
+        (log/info "Creating default JSch using tyranitar private key and known-hosts.")
         (.addIdentity jsch "tyranitar" (.getBytes tyranitar-private-key) nil nil)
         (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes known-hosts)))
         jsch))))
@@ -95,11 +91,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 
 (conch/programs rm)
 
-(defn- repo-name
-  [application env]
-  (str application "-" env))
-
-(defn- repo-url
+(defn repo-url
   [repo-name]
   (str base-git-url repo-name))
 
@@ -110,9 +102,9 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn clone-repo
   "Clones the latest version of the specified repo from GIT."
   [repo-name]
-  (info "First ensuring that repository directory does not exist")
+  (log/info "First ensuring that repository directory does not exist")
   (rm "-rf" (repo-path repo-name))
-  (info "Cloning repository to" (repo-path repo-name))
+  (log/info "Cloning repository to" (repo-path repo-name))
   (->
    (Git/cloneRepository)
    (.setURI (repo-url repo-name))
@@ -121,31 +113,31 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
    (.setBranch "master")
    (.setBare false)
    (.call))
-  (info "Cloning completed."))
+  (log/info "Cloning completed."))
 
-(defn- pull-repo
+(defn pull-repo
   "Pull a repository by fetching then merging. Assumes no merge conflicts which should be OK as the repository will only ever be touched via this route."
   [repo-name]
   (let [git (Git/open (as-file (repo-path repo-name)))]
-    (info "Fetching repository to" (repo-path repo-name))
+    (log/info "Fetching repository to" (repo-path repo-name))
     (->
      (.fetch git)
      (.call))
-    (info "Fetch completed.")
+    (log/info "Fetch completed.")
     (let [repo (.getRepository git)
           origin-master (.resolve repo "origin/master")]
-      (info "Merging origin/master.")
+      (log/info "Merging origin/master.")
       (->
        (.merge git)
        (.include origin-master)
        (.call))
-      (info "Merge completed."))))
+      (log/info "Merge completed."))))
 
 (defn get-exact-commit
   "Get the hash and the data contained in the file for the category file in the chosen repository at the specified
    commit level from GIT. Will accept the same commit identifiers as GIT."
   [repo-name category commit]
-  (info "Attempting to get exact commit" commit "in" repo-name "for category" category)
+  (log/info "Attempting to get exact commit" commit "in" repo-name "for category" category)
   (let [git (Git/open (as-file (repo-path repo-name)))
         repo (.getRepository git)
         commit-id (.resolve repo commit)
@@ -155,7 +147,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         twalk (TreeWalk/forPath repo (str category ".json") tree)
         loader (.open repo (.getObjectId twalk 0))
         text-result (slurp (.openStream loader))]
-    (info "Commit with hash" (.getName commit-id) "obtained")
+    (log/info "Commit with hash" (.getName commit-id) "obtained")
     {:hash (.getName commit-id)
      :data (parse-string text-result true)}))
 
@@ -168,141 +160,16 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
    :message (.getShortMessage commit)
    :date (unparse (:date-time-no-ms formatters) (from-long (* (.getCommitTime commit) 1000)))})
 
-(defn- get-recent-commits-list
+(defn fetch-recent-commits
   "Get the 20 most recent commits to the repository."
   [repo-name]
-  (info "Attempting to get recent commits for repository" repo-name)
+  (log/info "Attempting to get recent commits for repository" repo-name)
   (let [git (Git/open (as-file (repo-path repo-name)))
         commits (->
                  (.log git)
                  (.setMaxCount 20)
                  (.call))]
     {:commits (reduce (fn [v i] (conj v (commit-to-map i))) [] commits)}))
-
-(defn- repo-exists?
-  [repo-name]
-  (.exists (as-file (repo-path repo-name))))
-
-(defn- ensure-repo-up-to-date
-  "Gets or updates the specified repo from GIT"
-  [repo-name]
-  (if (repo-exists? repo-name)
-    (pull-repo repo-name)
-    (do
-      (info (str "Repo '" repo-name "' not found - attempting to clone"))
-      (clone-repo repo-name))))
-
-(defn get-data
-   "Fetches the data corresponding to the given params from GIT"
-  [env app commit category]
-  (let [repo-name (repo-name app env)]
-    (try
-      (ensure-repo-up-to-date repo-name)
-      (get-exact-commit repo-name category (upper-case commit))
-      (catch InvalidRemoteException e
-        (info (str "Can't communicate with remote repo '" repo-name "': " e))
-        nil)
-      (catch NullPointerException e
-        (info (str "Revision '" commit "' not found in repo '" repo-name "': " e))
-        nil)
-      (catch MissingObjectException e
-        (info (str "Missing object for revision '" commit "' in repo '" repo-name "': " e))
-        nil))))
-
-(defn get-list
-  "Get a list of the 20 most recent commits to the repository in most recent first order."
-  [env app]
-  (let [repo-name (repo-name app env)]
-    (try
-      (ensure-repo-up-to-date repo-name)
-      (get-recent-commits-list repo-name)
-      (catch InvalidRemoteException e
-        (info (str "Can't communicate with remote repo '" repo-name "': " e))
-        nil))))
-
-(defn git-connection-working
-  "Returns true if the remote repository is available and behaving as expected"
-  []
-  (try
-    (get-list "dev" "skeleton")
-    true
-    (catch Exception e
-      false)))
-
-(def snc-url
-  (str (env :service-snc-api-base-url)
-       "projects/tyranitar/repositories?api_username="
-       (env :service-snc-api-username)
-       "&api_secret="
-       (env :service-snc-api-secret)))
-
-(defn- data-from-repo-item
-  [item]
-  (let [name (:name item)
-        name-parts (split name #"-")
-        app-name (first name-parts)
-        env (second name-parts)
-        access-methods (:access_methods item)
-        ssh-repo-path (:uri (first (filterv #(= (:method %) "ssh") access-methods)))]
-    {:app app-name :env env :name name :path ssh-repo-path}))
-
-(defn- get-repo-list-from-snc
-  []
-  (let [response (http/get snc-url {:as :json :throw-exceptions false})
-        body (:body response)]
-    body))
-
-(defn- process-repository-list
-  "Process the list of data returned from SNC into the form that we want."
-  [list]
-  (let [data (map data-from-repo-item list)
-        grouped-app-list (group-by :app data)
-        result (into {} (map (fn [[k v]] {(keyword k) {:repositories (mapv #(dissoc % :app :env) v)}}) grouped-app-list))]
-    result))
-
-(defn get-repository-list
-  "Returns a list of all repositories that exist in the tyranitar git SNC project."
-  ([]
-     (process-repository-list (get-repo-list-from-snc)))
-  ([env]
-     (process-repository-list (filter #(.endsWith (:name %) env) (get-repo-list-from-snc)))))
-
-(defn- repo-create-body
-  [name env]
-  (let [repo-name (repo-name name env)]
-      (str "repository[name]=" repo-name "&repository[kind]=Git")))
-
-(defn- create-repository
-  [name env]
-  (let [response (http/post snc-url {:body (repo-create-body name env)
-                                     :content-type "application/x-www-form-urlencoded"
-                                     :throw-exceptions false})
-        status (:status response)]
-    (when (not= status 200)
-      (throw+ {:status status :message (:message (parse-string (:body response) true))}))))
-
-(defn dest-path
-  "Gets the file path in the repo to write to for the given params."
-  [app-name env category]
-  (let [repo-path (repo-path (repo-name app-name env))]
-    (str repo-path "/" category ".json")))
-
-(defn write-templated-properties
-  "Substitutes the application name for placeholders in the given template and writes the file."
-  [app-name template env]
-  (let [data {:app-name app-name :env-name env :is-prod (= "prod" env)}
-        dest-path (dest-path app-name env template)]
-    (->>
-     (templates/render-resource (str template ".json") data)
-     (spit dest-path))))
-
-(defn- write-default-properties
-  "Writes a default set of service properties to the GIT repo file location."
-  [app-name env]
-  (let [repo-path (repo-path (repo-name app-name env))]
-    (write-templated-properties app-name "application-properties" env)
-    (write-templated-properties app-name "deployment-params" env)
-    (write-templated-properties app-name "launch-data" env)))
 
 (defn commit-and-push
   [repo-name message]
@@ -321,34 +188,4 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
      (.call))
     (->
      push
-     (.call))
-    ))
-
-(defn- create-application-env
-  [name env]
-  (let [repo-name (repo-name name env)]
-    (create-repository name env)
-    (clone-repo repo-name)
-    (write-default-properties name env)
-    (commit-and-push repo-name "Initial properties files.")
-    {:name repo-name :path (repo-url repo-name)}))
-
-(defn create-application
-  [name]
-  {:repositories [(create-application-env name "poke")
-                  (create-application-env name "prod")]})
-
-(defn write-properties-file
-  "Writes the given properties to the appropriate local GIT file."
-  [app-name env category props]
-  (let [dest-path (dest-path app-name env category)]
-    (spit dest-path (generate-string props {:pretty true}))))
-
-(defn update-properties
-  "Adds or updates the given properties in the given app, env and category."
-  [app-name env category tokens]
-  (let [orig (get-data env app-name "head" category)
-        updated (into (sorted-map) (merge (:data orig) tokens))]
-    (write-properties-file app-name env category updated)
-    (commit-and-push (repo-name app-name env) "Updated properties")
-    (get-data env app-name "head" category)))
+     (.call))))

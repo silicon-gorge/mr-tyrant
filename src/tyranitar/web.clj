@@ -1,6 +1,8 @@
 (ns tyranitar.web
-  (:require [tyranitar.git :as git]
-            [tyranitar.pokemon :as pokemon])
+  (:require [tyranitar
+             [git :as git]
+             [pokemon :as pokemon]
+             [store :as store]])
   (:require [compojure.core :refer [defroutes context GET PUT POST DELETE]]
             [compojure.route :as route]
             [compojure.handler :as handler]
@@ -40,7 +42,7 @@
 
 (defn- status
   []
-  (let [git-ok (git/git-connection-working)]
+  (let [git-ok (store/git-connection-working)]
     (->
      {:name "tyranitar"
       :version *version*
@@ -50,13 +52,13 @@
 
 (defn- get-data
   [env app commit category]
-  (if-let [result (git/get-data env app commit category)]
+  (if-let [result (store/get-data env app commit category)]
     (response result)
     (error-response (str "No data of type '" category "' for application '" app "' at revision '" commit "' - does it exist?") 404)))
 
 (defn- get-list
   [env app]
-  (if-let [result (git/get-list env app)]
+  (if-let [result (store/get-commits env app)]
     (response result)
     (error-response (str "Application '" app "' does not exist.") 404)))
 
@@ -64,7 +66,7 @@
   [body]
   (let [data (json/parse-string (slurp body) true)]
     (try+
-     (response (git/create-application (:name data)) json-content-type 201)
+     (response (store/create-application (:name data)) json-content-type 201)
      (catch [:status 422] e (error-response (str "Could not create application '" (:name data) "', message: " (:message e)) 409)))))
 
 (defn read-json-body
@@ -75,14 +77,14 @@
 (defn update-properties
   [app-name env category properties]
   (try
-    (response (git/update-properties app-name env category (read-json-body properties)))
+    (response (store/update-properties app-name env category (read-json-body properties)))
     (catch GitAPIException e
       (error-response (str "Unable to store update to GIT: " e ) 409))))
 
 (defroutes applications-routes
   (GET "/"
        []
-       (response {:applications (git/get-repository-list)}))
+       (response {:applications (store/get-repository-list)}))
 
   (POST "/"
         {body :body}
@@ -90,7 +92,7 @@
 
   (GET ["/:env" :env env-regex]
        [env]
-       (response {:applications (git/get-repository-list env)}))
+       (response {:applications (store/get-repository-list env)}))
 
   (GET ["/:env/:app" :env env-regex]
        [env app]
@@ -127,7 +129,7 @@
             [] applications-routes))
 
   (GET "/healthcheck" []
-       (let [git-ok (git/git-connection-working)]
+       (let [git-ok (store/git-connection-working)]
          (if git-ok
            (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8")
            (response "I am unwell. Can't talk to remote git repository." "text/plain;charset=utf-8" 500))))

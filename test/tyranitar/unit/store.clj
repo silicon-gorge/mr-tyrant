@@ -1,7 +1,8 @@
-(ns tyranitar.unit.git
+(ns tyranitar.unit.store
+  (:require [tyranitar.git :as git])
   (:require [clojure.java.io :as io]
             [cheshire.core :as json])
-  (:use [tyranitar.git]
+  (:use [tyranitar.store]
         [midje.sweet]))
 
 (def dummy-repo-path "/tmp")
@@ -64,7 +65,7 @@
                                                                   check-deployment-params) => true
 
                                                                   (provided
-                                                                   (repo-path anything) => dummy-repo-path))
+                                                                   (git/repo-path anything) => dummy-repo-path))
 
                    (fact "Template values are correctly substituted in dev application properties."
                          (property-values-are-correctly-templated {:name "test"
@@ -72,7 +73,7 @@
                                                                    :env "dev"}
                                                                   check-app-props) => true
                                                                   (provided
-                                                                   (repo-path anything) => dummy-repo-path))
+                                                                   (git/repo-path anything) => dummy-repo-path))
 
                     (fact "Template values are correctly substituted in prod application properties."
                          (property-values-are-correctly-templated {:name "test"
@@ -80,7 +81,7 @@
                                                                    :env "prod"}
                                                                   check-app-props) => true
                                                                   (provided
-                                                                   (repo-path anything) => dummy-repo-path)))
+                                                                   (git/repo-path anything) => dummy-repo-path)))
 
             (facts "****** About updating application properties ******"
 
@@ -89,4 +90,4 @@
                          (provided
                           (get-data "dev" "dummy" "head" "dummy-props") => dummy-data
                           (spit "/tmp/repos/dummy-dev/dummy-props.json" (json/generate-string expected-update {:pretty true})) => anything
-                          (commit-and-push anything anything) => anything))))
+                          (git/commit-and-push anything anything) => anything))))

@@ -1,6 +1,6 @@
 (ns tyranitar.unit.web
   (:require [cheshire.core :as json]
-            [tyranitar.git :as git])
+            [tyranitar.store :as store])
   (:use [tyranitar.web]
         [midje.sweet])
   (:import [org.eclipse.jgit.api.errors GitAPIException InvalidRemoteException]))
@@ -38,32 +38,32 @@
   (fact "Get commits for application and dev environment works"
         (request :get "/1.x/applications/dev/test") => (contains {:status 200})
         (provided
-         (git/get-list "dev" "test") => []))
+         (store/get-commits "dev" "test") => []))
 
   (fact "Get commits for application and prod environment works"
         (request :get "/1.x/applications/prod/test") => (contains {:status 200})
         (provided
-         (git/get-list "prod" "test") => []))
+         (store/get-commits "prod" "test") => []))
 
   (fact "Get commits for application that doesn't exist results in not found response"
         (request :get "/1.x/applications/prod/test") => (contains {:status 404})
         (provided
-         (git/get-list "prod" "test") => nil))
+         (store/get-commits "prod" "test") => nil))
 
   (fact "Get head -n commit for application works"
         (request :get "/1.x/applications/prod/test/head~2/application-properties") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "head~2" "application-properties") => []))
+         (store/get-data "prod" "test" "head~2" "application-properties") => []))
 
   (fact "Get head commit for application works"
         (request :get "/1.x/applications/prod/test/head/application-properties") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "head" "application-properties") => []))
+         (store/get-data "prod" "test" "head" "application-properties") => []))
 
   (fact "Get specific commit for application works"
         (request :get "/1.x/applications/prod/test/921f195c98570550e743911bc3f5aca260d73f6f/application-properties") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "921f195c98570550e743911bc3f5aca260d73f6f" "application-properties") => []))
+         (store/get-data "prod" "test" "921f195c98570550e743911bc3f5aca260d73f6f" "application-properties") => []))
 
   (fact "Get for an invalid commit value results in not found response"
         (request :get "/1.x/applications/prod/test/badcommit/application-properties") => (contains {:status 404}))
@@ -71,25 +71,24 @@
   (fact "Getting deployment-params works"
         (request :get "/1.x/applications/prod/test/head/deployment-params") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "head" "deployment-params") => []))
+         (store/get-data "prod" "test" "head" "deployment-params") => []))
 
   (fact "Getting launch-data works"
         (request :get "/1.x/applications/prod/test/head/launch-data") => (contains {:status 200})
         (provided
-         (git/get-data "prod" "test" "head" "launch-data") => []))
+         (store/get-data "prod" "test" "head" "launch-data") => []))
 
   (facts "****** About updating properties ******"
 
          (fact "Updating properties is called with the correct params."
                (request :post "/1.x/applications/dev/testapp/application-properties" {:body {:a "one" :b "two"}}) => (contains {:status 200})
                (provided
-                (git/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
+                (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
                 => {:dummy "value"}))
 
          (fact "Git failure returns correct error response."
                (request :post "/1.x/applications/dev/testapp/application-properties" {:body {:a "one" :b "two"}}) => (contains {:status 409})
                (provided
-                (git/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
+                (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"})
                 =throws=> (InvalidRemoteException. "GIT update failed!"))
-               )
-         ))
+               )))
