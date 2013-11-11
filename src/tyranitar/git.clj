@@ -23,7 +23,7 @@
 ;;     com.jcraft.jsch.Logger/WARN :warn
 ;;     com.jcraft.jsch.Logger/ERROR :error
 ;;     com.jcraft.jsch.Logger/FATAL :fatal}))
-
+;;
 ;; (deftype SshLogger
 ;;    [log-level]
 ;;    com.jcraft.jsch.Logger
@@ -32,8 +32,8 @@
 ;;     (>= level log-level))
 ;;    (log
 ;;     [_ level message]
-;;     (logging/log "clj-ssh.ssh" (@ssh-log-levels level) nil message)))
-
+;;     (log/log "clj-ssh.ssh" (@ssh-log-levels level) nil message)))
+;;
 ;; (JSch/setLogger (SshLogger. com.jcraft.jsch.Logger/DEBUG))
 
 ; The private key of the tyranitar-bot installed in SNC. Shouldn't change.
@@ -75,16 +75,16 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (def base-git-url (env :service-base-git-repository-url))
 (def base-git-path (env :service-base-git-repository-path))
 
-(def git-timeout 60000)
+(def git-timeout 60)
 
 (def my-jcs-factory
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
-      (log/info "Configuring JschConfigSessionFactory.")
+      (log/debug "Configuring JschConfigSessionFactory.")
       (.setConfig session "StrictHostChecking" "yes"))
     (createDefaultJSch [fs]
       (let [jsch (JSch.)]
-        (log/info "Creating default JSch using tyranitar private key and known-hosts.")
+        (log/debug "Creating default JSch using tyranitar private key and known-hosts.")
         (.addIdentity jsch "tyranitar" (.getBytes tyranitar-private-key) nil nil)
         (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes known-hosts)))
         jsch))))
@@ -104,9 +104,9 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn clone-repo
   "Clones the latest version of the specified repo from GIT."
   [repo-name]
-  (log/info "First ensuring that repository directory does not exist")
+  (log/debug "First ensuring that repository directory does not exist")
   (rm "-rf" (repo-path repo-name))
-  (log/info "Cloning repository to" (repo-path repo-name))
+  (log/debug "Cloning repository to" (repo-path repo-name))
   (->
    (Git/cloneRepository)
    (.setURI (repo-url repo-name))
@@ -116,32 +116,32 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
    (.setBare false)
    (.setTimeout git-timeout)
    (.call))
-  (log/info "Cloning completed."))
+  (log/debug "Cloning completed."))
 
 (defn pull-repo
   "Pull a repository by fetching then merging. Assumes no merge conflicts which should be OK as the repository will only ever be touched via this route."
   [repo-name]
   (let [git (Git/open (as-file (repo-path repo-name)))]
-    (log/info "Fetching repository to" (repo-path repo-name))
+    (log/debug "Fetching repository to" (repo-path repo-name))
     (->
      (.fetch git)
      (.setTimeout git-timeout)
      (.call))
-    (log/info "Fetch completed.")
+    (log/debug "Fetch completed.")
     (let [repo (.getRepository git)
           origin-master (.resolve repo "origin/master")]
-      (log/info "Merging origin/master.")
+      (log/debug "Merging origin/master.")
       (->
        (.merge git)
        (.include origin-master)
        (.call))
-      (log/info "Merge completed."))))
+      (log/debug "Merge completed."))))
 
 (defn get-exact-commit
   "Get the hash and the data contained in the file for the category file in the chosen repository at the specified
    commit level from GIT. Will accept the same commit identifiers as GIT."
   [repo-name category commit]
-  (log/info "Attempting to get exact commit" commit "in" repo-name "for category" category)
+  (log/debug "Attempting to get exact commit" commit "in" repo-name "for category" category)
   (let [git (Git/open (as-file (repo-path repo-name)))
         repo (.getRepository git)
         commit-id (.resolve repo commit)
@@ -151,7 +151,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         twalk (TreeWalk/forPath repo (str category ".json") tree)
         loader (.open repo (.getObjectId twalk 0))
         text-result (slurp (.openStream loader))]
-    (log/info "Commit with hash" (.getName commit-id) "obtained")
+    (log/debug "Commit with hash" (.getName commit-id) "obtained")
     {:hash (.getName commit-id)
      :data (parse-string text-result true)}))
 
@@ -167,7 +167,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (defn fetch-recent-commits
   "Get the 20 most recent commits to the repository."
   [repo-name]
-  (log/info "Attempting to get recent commits for repository" repo-name)
+  (log/debug "Attempting to get recent commits for repository" repo-name)
   (let [git (Git/open (as-file (repo-path repo-name)))
         commits (->
                  (.log git)
@@ -176,6 +176,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     {:commits (reduce (fn [v i] (conj v (commit-to-map i))) [] commits)}))
 
 (defn commit-and-push
+  "Does what it says on the tin."
   [repo-name message]
   (let [git (Git/open (as-file (repo-path repo-name)))
         add (.add git)
@@ -194,3 +195,11 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
      push
      (.setTimeout git-timeout)
      (.call))))
+
+(defn can-connect
+  "Checks that we can connect to the given repo's remote."
+  [repo-name]
+  (->
+   (Git/open (as-file (repo-path repo-name)))
+   (.lsRemote)
+   (.call)))

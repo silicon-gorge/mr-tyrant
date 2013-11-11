@@ -8,7 +8,7 @@
   
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${service.logging.fileThreshold:-debug}</level>
+            <level>${service.logging.fileThreshold:-info}</level>
         </filter>
         <file>${service.logging.path:-/tmp}/tyranitar.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -26,7 +26,7 @@
 
   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${service.logging.consoleThreshold:-debug}</level>
+            <level>${service.logging.consoleThreshold:-info}</level>
         </filter>
         <encoder>
             <pattern>%d %-18thread %-5level %X{logItemId} %logger - %msg%n%ex</pattern>

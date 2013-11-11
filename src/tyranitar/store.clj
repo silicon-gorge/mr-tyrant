@@ -25,7 +25,7 @@
   (if (repo-exists? repo-name)
     (git/pull-repo repo-name)
     (do
-      (log/info (str "Repo '" repo-name "' not found - attempting to clone"))
+      (log/debug (str "Repo '" repo-name "' not found - attempting to clone"))
       (git/clone-repo repo-name))))
 
 (defn get-data
@@ -36,13 +36,13 @@
       (ensure-repo-up-to-date repo-name)
       (git/get-exact-commit repo-name category (upper-case commit))
       (catch InvalidRemoteException e
-        (log/info (str "Can't communicate with remote repo '" repo-name "': " e))
+        (log/warn (str "Can't communicate with remote repo '" repo-name "': " e))
         nil)
       (catch NullPointerException e
-        (log/info (str "Revision '" commit "' not found in repo '" repo-name "': " e))
+        (log/warn (str "Revision '" commit "' not found in repo '" repo-name "': " e))
         nil)
       (catch MissingObjectException e
-        (log/info (str "Missing object for revision '" commit "' in repo '" repo-name "': " e))
+        (log/warn (str "Missing object for revision '" commit "' in repo '" repo-name "': " e))
         nil))))
 
 (defn get-commits
@@ -53,18 +53,16 @@
       (ensure-repo-up-to-date repo-name)
       (git/fetch-recent-commits repo-name)
       (catch InvalidRemoteException e
-        (log/info (str "Can't communicate with remote repo '" repo-name "': " e))
+        (log/warn (str "Can't communicate with remote repo '" repo-name "': " e))
         nil))))
 
 (defn git-connection-working
   "Returns true if the remote repository is available and behaving as expected"
   []
   (try
-    (get-commits "poke" "tyranitar")
-    true
+    (git/can-connect (repo-name "tyranitar" "poke"))
     (catch Exception e
-      (log/warn "Cannot connect to repository!" e)
-      false)))
+      (log/warn "Cannot connect to repository!" e))))
 
 (def snc-url
   (str (env :service-snc-api-base-url)
