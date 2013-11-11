@@ -25,6 +25,8 @@
 
 (def json-content-type "application/json;charset=utf-8")
 
+(def plain-text "text/plain;charset=utf-8")
+
 (def category-regex #"application-properties|launch-data|deployment-params")
 
 (def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
@@ -117,7 +119,7 @@
         [] (status))
 
    (GET "/pokemon"
-        [] (response pokemon/pokemon "text/plain;charset=utf-8"))
+        [] (response pokemon/pokemon plain-text))
 
    (GET "/icon" []
         {:status 200
@@ -129,10 +131,9 @@
             [] applications-routes))
 
   (GET "/healthcheck" []
-       (let [git-ok (store/git-connection-working)]
-         (if git-ok
-           (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8")
-           (response "I am unwell. Can't talk to remote git repository." "text/plain;charset=utf-8" 500))))
+       (if (store/git-connection-working)
+         (response "I am healthy. Thank you for asking." plain-text)
+         (response "I am unwell. Can't talk to remote git repository." plain-text 500)))
 
   (route/not-found (error-response "Resource not found" 404)))
 

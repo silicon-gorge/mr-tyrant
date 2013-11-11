@@ -60,9 +60,10 @@
   "Returns true if the remote repository is available and behaving as expected"
   []
   (try
-    (get-commits "dev" "skeleton")
+    (get-commits "poke" "tyranitar")
     true
     (catch Exception e
+      (log/warn "Cannot connect to repository!" e)
       false)))
 
 (def snc-url

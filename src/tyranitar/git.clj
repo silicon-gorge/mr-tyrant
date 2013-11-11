@@ -75,6 +75,8 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 (def base-git-url (env :service-base-git-repository-url))
 (def base-git-path (env :service-base-git-repository-path))
 
+(def git-timeout 60000)
+
 (def my-jcs-factory
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
@@ -112,6 +114,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
    (.setRemote "origin")
    (.setBranch "master")
    (.setBare false)
+   (.setTimeout git-timeout)
    (.call))
   (log/info "Cloning completed."))
 
@@ -122,6 +125,7 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
     (log/info "Fetching repository to" (repo-path repo-name))
     (->
      (.fetch git)
+     (.setTimeout git-timeout)
      (.call))
     (log/info "Fetch completed.")
     (let [repo (.getRepository git)
@@ -188,4 +192,5 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
      (.call))
     (->
      push
+     (.setTimeout git-timeout)
      (.call))))
