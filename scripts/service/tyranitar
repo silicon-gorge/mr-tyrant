@@ -18,7 +18,7 @@
 #define where jetty is
 GIVEN_HOME="/usr/local/tyranitar"
 
-tyranitar_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
+JETTY_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
 #define the user under which tyranitar will run, or use 'RUNASIS' to run as the current user
 tyranitar_USER=${JETTY_USER:-"tyranitar"}
