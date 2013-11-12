@@ -16,7 +16,7 @@
 # processname: tyranitar 
 
 #define where jetty is
-GIVEN_HOME="/usr/local/jetty"
+GIVEN_HOME="/usr/local/tyranitar"
 
 tyranitar_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
