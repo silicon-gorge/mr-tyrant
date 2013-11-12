@@ -44,7 +44,7 @@
 
 (defn- status
   []
-  (let [git-ok (not (nil? (store/git-connection-working)))]
+  (let [git-ok (not (nil? (store/git-connection-working?)))]
     (->
      {:name "tyranitar"
       :version *version*
