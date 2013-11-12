@@ -1,6 +1,6 @@
 /bin/echo "preinstall script started [$1]"
 
-prefixDir=/usr/local/jetty
+prefixDir=/usr/local/tyranitar
 identifier=tyranitar.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
@@ -14,7 +14,7 @@ else
 
   /bin/echo "Timeout is $waitTimeOut seconds"
   /bin/echo "Jetty is running, stopping service"
-  /sbin/service jetty stop &
+  /sbin/service tyranitar stop &
   myPid=$!
 
   until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]
@@ -39,17 +39,16 @@ rm -rf $prefixDir
 if [ "$1" -le 1 ]
 then
   mkdir -p $prefixDir
-  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Jetty user for the Jetty service" jetty 2> /dev/null || :
+  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Jetty user for the Jetty service" tyranitar 2> /dev/null || :
 fi
 
-/usr/bin/getent passwd jetty
+/usr/bin/getent passwd tyranitar
 
 mkdir /usr/local/deployment/tyranitar/config
 cp /usr/local/tyranitar/etc/${AWSENV}.properties /usr/local/deployment/tyranitar/config/post_install.properties
 
 mkdir -p /usr/local/tyranitar/repos
-chown jetty /usr/local/tyranitar/repos
-chgrp jetty /usr/local/tyranitar/repos
+chown tyranitar:tyranitar /usr/local/tyranitar/repos
 
 /bin/echo "preinstall script finished"
 exit 0

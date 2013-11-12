@@ -10,7 +10,7 @@ then
   exit 1
 fi
 
-JETTY_HOME=/usr/local/jetty
+JETTY_HOME=/usr/local/tyranitar
 JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
 LOG_FILE=$JETTY_HOME/log/jetty.log
 ERR_FILE=$JETTY_HOME/log/jetty.err

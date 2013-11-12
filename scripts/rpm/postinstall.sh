@@ -2,18 +2,18 @@
 
 if [ "$1" -le 1 ]
 then
-  /sbin/chkconfig --add jetty
+  /sbin/chkconfig --add tyranitar
 else
-  /sbin/chkconfig --list jetty
+  /sbin/chkconfig --list tyranitar
 fi
 
-mkdir -p /var/log/jetty
+mkdir -p /var/log/tyranitar
 
-chown -R jetty:jetty /var/log/jetty
+chown -R tyranitar:tyranitar /var/log/tyranitar
 
-ln -s /var/log/jetty /usr/local/jetty/log
+ln -s /var/log/tyranitar /usr/local/tyranitar/log
 
-chown jetty:jetty /usr/local/jetty
+chown tyranitar:tyranitar /usr/local/tyranitar
 
 /bin/echo "postinstall script finished"
 exit 0

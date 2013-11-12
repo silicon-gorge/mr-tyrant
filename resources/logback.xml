@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
-  <!-- Suppress messages that may cause deadlock -->
-  <logger name="org.eclipse.jetty.webapp.WebAppClassLoader" level="off" />
-
+  
   <!-- Properties should be provided as environment variables or the defaults will be used -->
   
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -24,14 +21,6 @@
         </encoder>
     </appender>
 
-  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${service.logging.consoleThreshold:-info}</level>
-        </filter>
-        <encoder>
-            <pattern>%d %-18thread %-5level %X{logItemId} %logger - %msg%n%ex</pattern>
-        </encoder>
-    </appender>
 
      <!-- Suppress messages which may cause deadlock -->
     <logger name="org.eclipse.jetty.webapp.WebAppClassLoader" level="off"/>
@@ -44,6 +33,5 @@
 
     <root level="all">
         <appender-ref ref="file"/>
-        <appender-ref ref="console"/>
     </root>
 </configuration>

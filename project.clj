@@ -89,23 +89,23 @@
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.6.0_31-fcs"]
-        :mappings [{:directory "/usr/local/jetty"
+        :mappings [{:directory "/usr/local/tyranitar"
                     :filemode "444"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "tyranitar"
+                    :groupname "tyranitar"
                     :sources {:source [{:location "target/tyranitar.jar"}]}}
-                   {:directory "/usr/local/jetty/bin"
+                   {:directory "/usr/local/tyranitar/bin"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "tyranitar"
+                    :groupname "tyranitar"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/usr/local/deployment/tyranitar/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
-                    :sources {:source [{:location "scripts/service/jetty"}]}}]}
+                    :username "tyranitar"
+                    :groupname "tyranitar"
+                    :sources {:source [{:location "scripts/service/tyranitar"}]}}]}
 
   :main tyranitar.setup)

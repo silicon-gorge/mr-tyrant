@@ -56,13 +56,16 @@
         (log/warn (str "Can't communicate with remote repo '" repo-name "': " e))
         nil))))
 
-(defn git-connection-working
+(defn git-connection-working?
   "Returns true if the remote repository is available and behaving as expected"
   []
-  (try
-    (git/can-connect (repo-name "tyranitar" "poke"))
-    (catch Exception e
-      (log/warn "Cannot connect to repository!" e))))
+  (let [repo-name (repo-name "tyranitar" "poke")]
+    (try
+      (when-not (repo-exists? repo-name)
+        (git/clone-repo repo-name))
+      (git/can-connect repo-name)
+      (catch Exception e
+        (log/warn "Cannot connect to repository!" e)))))
 
 (def snc-url
   (str (env :service-snc-api-base-url)

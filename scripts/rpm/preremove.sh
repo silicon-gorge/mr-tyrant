@@ -1,6 +1,6 @@
 /bin/echo "preremove script started [$1]"
 
-prefixDir=/usr/local/jetty
+prefixDir=/usr/local/tyranitar
 identifier=tyranitar.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
@@ -13,7 +13,7 @@ else
   waitTimeOut=600
   /bin/echo "Timeout is $waitTimeOut seconds"
   /bin/echo "Jetty is running, stopping service"
-  /sbin/service jetty stop &
+  /sbin/service tyranitar stop &
   myPid=$!
   
   until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]  
@@ -35,9 +35,9 @@ fi
 
 if [ "$1" = 0 ]
 then
-  /sbin/chkconfig --del jetty
+  /sbin/chkconfig --del tyranitar
 else
-  /sbin/chkconfig --list jetty
+  /sbin/chkconfig --list tyranitar
 fi
 
 /bin/echo "preremove script finished"

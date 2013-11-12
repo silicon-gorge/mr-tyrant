@@ -131,7 +131,7 @@
             [] applications-routes))
 
   (GET "/healthcheck" []
-       (if (store/git-connection-working)
+       (if (store/git-connection-working?)
          (response "I am healthy. Thank you for asking." plain-text)
          (response "I am unwell. Can't talk to remote git repository." plain-text 500)))
 
