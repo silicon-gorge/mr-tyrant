@@ -3,7 +3,6 @@
    "notificationDestination" : "contact.email@nokia.com",
    "selectedLoadBalancers" : "{{app-name}}",
    "selectedSecurityGroups" : [
-      "{{app-name}}",
       "Brislabs-SSH"
    ]
 }

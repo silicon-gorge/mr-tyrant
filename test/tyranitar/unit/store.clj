@@ -29,7 +29,7 @@
   (let [name (:name template-params)]
     (and
      (= name (:selectedLoadBalancers props))
-     (= name (first (:selectedSecurityGroups props))))))
+     (= "Brislabs-SSH" (first (:selectedSecurityGroups props))))))
 
 (defn is-correct-val-for-env
   [env val]
