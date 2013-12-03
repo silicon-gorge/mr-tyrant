@@ -44,9 +44,6 @@ fi
 
 /usr/bin/getent passwd tyranitar
 
-mkdir /usr/local/deployment/tyranitar/config
-cp /usr/local/tyranitar/etc/${AWSENV}.properties /usr/local/deployment/tyranitar/config/post_install.properties
-
 mkdir -p /usr/local/tyranitar/repos
 chown tyranitar:tyranitar /usr/local/tyranitar/repos
 
