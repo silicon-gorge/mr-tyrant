@@ -76,11 +76,11 @@
                list-body (read-body list)
                tyranitar (:tyranitar (:applications list-body))
                tyranitar-dev-repo-name (:name (first (:repositories tyranitar)))]
-           tyranitar-dev-repo-name => "tyranitar-dev"))
+           tyranitar-dev-repo-name => "tyranitar-poke"))
 
    (fact "Can list applications in particular environment with right format"
          (let [list (client/get (url+ "/applications/prod"))
                list-body (read-body list)
-               tyranitar (:tyranitar (:applications list-body))
-               tyranitar-prod-repo-name (:name (first (:repositories tyranitar)))]
-           tyranitar-prod-repo-name => "tyranitar-prod")))
+               test (:test (:applications list-body))
+               test-prod-repo-name (:name (first (:repositories test)))]
+           test-prod-repo-name => "test-prod")))
