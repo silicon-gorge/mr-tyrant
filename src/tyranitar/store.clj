@@ -11,6 +11,26 @@
   (:import [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException]))
 
+(defn- poke-properties
+  "Default properties for poke environment"
+  [app-name env]
+  {:app-name app-name
+   :env-name env
+   :graphite-host "graphite.brislabs.com"
+   :is-prod false
+   :ssh-security-group "Brislabs-SSH"
+   :web-security-group "Brislabs-8080"})
+
+(defn- prod-properties
+  "Default properties for prod environment"
+  [app-name env]
+  {:app-name app-name
+   :env-name env
+   :graphite-host "graphite.int.ent.nokia.com"
+   :is-prod true
+   :ssh-security-group "AppGate"
+   :web-security-group "internal-8080"})
+
 (defn- repo-name
   [application env]
   (str application "-" env))
@@ -128,7 +148,7 @@
 (defn write-templated-properties
   "Substitutes the application name for placeholders in the given template and writes the file."
   [app-name template env]
-  (let [data {:app-name app-name :env-name env :is-prod (= "prod" env)}
+  (let [data (if (= "prod" env) (prod-properties app-name env) (poke-properties app-name env))
         dest-path (dest-path app-name env template)]
     (->>
      (templates/render-resource (str template ".json") data)

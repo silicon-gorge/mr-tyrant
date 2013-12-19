@@ -1,12 +1,11 @@
 {
     "environment.name" : "{{env-name}}",
     "service.name" : "{{app-name}}",
-    "service.port" : "8080",
-    "service.url" :  "http://localhost:%s/1.x",
-    "environment.entertainment.graphite.host" : "graphite.brislabs.com",
-    "environment.entertainment.graphite.port" : "8080",
-    "service.graphite.post.interval" : "1",
+    "service.port" : 8080,
+    "environment.entertainment.graphite.host" : "{{graphite-host}}",
+    "environment.entertainment.graphite.port" : 8080,
+    "service.graphite.post.interval" : 1,
     "service.graphite.post.unit" : "MINUTES",
     "service.graphite.enabled" : "ENABLED",
-    "service.production" : "{{is-prod}}"
+    "service.production" : {{is-prod}}
 }

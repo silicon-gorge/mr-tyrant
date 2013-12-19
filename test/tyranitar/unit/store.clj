@@ -29,13 +29,13 @@
   (let [name (:name template-params)]
     (and
      (= name (:selectedLoadBalancers props))
-     (= "Brislabs-SSH" (first (:selectedSecurityGroups props))))))
+     (= "Brislabs-SSH" (second (:selectedSecurityGroups props))))))
 
 (defn is-correct-val-for-env
   [env val]
   (if (= "prod" env)
-    (= "true" val)
-    (= "false" val)))
+    val
+    (not val)))
 
 (defn check-app-props
   [props template-params]
@@ -61,16 +61,16 @@
                    (fact "Template values are correctly substituted in deployment params."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "deployment-params"
-                                                                   :env "dev"}
+                                                                   :env "poke"}
                                                                   check-deployment-params) => true
 
                                                                   (provided
                                                                    (git/repo-path anything) => dummy-repo-path))
 
-                   (fact "Template values are correctly substituted in dev application properties."
+                   (fact "Template values are correctly substituted in poke application properties."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "application-properties"
-                                                                   :env "dev"}
+                                                                   :env "poke"}
                                                                   check-app-props) => true
                                                                   (provided
                                                                    (git/repo-path anything) => dummy-repo-path))
@@ -86,8 +86,8 @@
             (facts "****** About updating application properties ******"
 
                    (fact "Existing properties are updated with correct values."
-                         (update-properties "dummy" "dev" "dummy-props" update) => anything
+                         (update-properties "dummy" "poke" "dummy-props" update) => anything
                          (provided
-                          (get-data "dev" "dummy" "head" "dummy-props") => dummy-data
-                          (spit "/tmp/repos/dummy-dev/dummy-props.json" (json/generate-string expected-update {:pretty true})) => anything
+                          (get-data "poke" "dummy" "head" "dummy-props") => dummy-data
+                          (spit "/tmp/repos/dummy-poke/dummy-props.json" (json/generate-string expected-update {:pretty true})) => anything
                           (git/commit-and-push anything anything) => anything))))

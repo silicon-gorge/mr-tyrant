@@ -1,8 +1,9 @@
 {
-   "healthCheckType" : "ELB",
+   "healthCheckType" : "EC2",
    "notificationDestination" : "contact.email@nokia.com",
    "selectedLoadBalancers" : "{{app-name}}",
    "selectedSecurityGroups" : [
-      "Brislabs-SSH"
+      "{{web-security-group}}",
+      "{{ssh-security-group}}"
    ]
 }
