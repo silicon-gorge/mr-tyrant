@@ -27,7 +27,7 @@
   [app-name env]
   {:app-name app-name
    :env-name env
-   :instance-type "m1.medium"
+   :instance-type "m1.small"
    :graphite-host "graphite.int.ent.nokia.com"
    :is-prod true
    :ssh-security-group "AppGate"
