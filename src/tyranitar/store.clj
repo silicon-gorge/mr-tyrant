@@ -17,7 +17,7 @@
   {:app-name app-name
    :env-name env
    :instance-type "m1.small"
-   :graphite-host "graphite.brislabs.com"
+   :graphite-host "carbon.brislabs.com"
    :is-prod false
    :ssh-security-group "Brislabs-SSH"
    :web-security-group "Brislabs-8080"})
@@ -28,7 +28,7 @@
   {:app-name app-name
    :env-name env
    :instance-type "m1.small"
-   :graphite-host "graphite.int.ent.nokia.com"
+   :graphite-host "carbon.ent.nokia.com"
    :is-prod true
    :ssh-security-group "AppGate"
    :web-security-group "internal-8080"})
