@@ -1,5 +1,6 @@
 {
   "environment.name" : "{{env-name}}",
+  "environment.music.errorLogging1Java.baseUrl": "{{error-logging-url}}",
   "service.name" : "{{app-name}}",
   "service.port" : 8080,
   "environment.entertainment.graphite.host" : "{{graphite-host}}",
