@@ -15,7 +15,7 @@
                  [org.slf4j/jcl-over-slf4j "1.7.5"]
                  [ch.qos.logback/logback-classic "1.0.13"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]
-                 [com.ovi.common.metrics/metrics-graphite "2.1.21"]
+                 [com.ovi.common.metrics/metrics-graphite "2.1.23"]
                  [clj-http "0.7.6" :exclusions [commons-logging]]
                  [cheshire "5.2.0"]
                  [clj-time "0.6.0"]
