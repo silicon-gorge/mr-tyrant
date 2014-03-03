@@ -4,7 +4,7 @@
               [clojure.string :as cs :only (split)]
               [clojure.tools.logging :refer (info warn error)]
               [clojure.java.io :as io]
-              [ring.adapter.jetty :refer [run-jetty]])
+              [nokia.adapter.instrumented-jetty :refer [run-jetty]])
     (:import (java.lang Integer Throwable)
              (java.util.logging LogManager)
              (com.yammer.metrics Metrics)
