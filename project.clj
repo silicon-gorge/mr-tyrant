@@ -53,11 +53,11 @@
         :restdriver-port "8081"
         :service-logging-filethreshold=info
         :service-logging-path=/var/log/tyranitar
-        :environment-entertainment-graphite-host "graphite.brislabs.com"
-        :environment-entertainment-graphite-port "8080"
-        :service-graphite-post-interval "1"
-        :service-graphite-post-unit "MINUTES"
-        :service-graphite-enabled "ENABLED"
+        :environment-entertainment-graphite-host "carbon.brislabs.com"
+        :environment-entertainment-graphite-port "2003"
+        :service-graphite-post-interval "15"
+        :service-graphite-post-unit "SECONDS"
+        :service-graphite-enabled "DISABLED"
         :service-production "false"
 
         :service-base-git-repository-url "ssh://snc@source.nokia.com/tyranitar/git/"
