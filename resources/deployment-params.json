@@ -5,6 +5,7 @@
   "instanceType" : "{{instance-type}}",
   "selectedSecurityGroups" : [
     "{{web-security-group}}",
+    {{#scanner-security-group}}"{{scanner-security-group}}",{{/scanner-security-group}}
     "{{ssh-security-group}}"
   ]
 }

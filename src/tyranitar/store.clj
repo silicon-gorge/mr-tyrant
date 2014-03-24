@@ -33,7 +33,8 @@
    :graphite-host "carbon.ent.nokia.com"
    :is-prod true
    :ssh-security-group "AppGate"
-   :web-security-group "internal-8080"})
+   :web-security-group "internal-8080"
+   :scanner-security-group "ICM Scanning"})
 
 (defn- repo-name
   [application env]

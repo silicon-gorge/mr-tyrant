@@ -24,12 +24,19 @@
                       :service.other.thing "changed"
                       :service.preferred.asg 2})
 
-(defn check-deployment-params
+(defn check-poke-deployment-params
   [props template-params]
   (let [name (:name template-params)]
     (and
      (= name (:selectedLoadBalancers props))
-     (= "Brislabs-SSH" (second (:selectedSecurityGroups props))))))
+     (= ["Brislabs-8080" "Brislabs-SSH"] (:selectedSecurityGroups props)))))
+
+(defn check-prod-deployment-params
+  [props template-params]
+  (let [name (:name template-params)]
+    (and
+     (= name (:selectedLoadBalancers props))
+     (= ["internal-8080" "ICM Scanning" "AppGate"] (:selectedSecurityGroups props)))))
 
 (defn is-correct-val-for-env
   [env val]
@@ -58,30 +65,38 @@
 
             (facts "****** About templating properties files ******"
 
-                   (fact "Template values are correctly substituted in deployment params."
+                   (fact "Template values are correctly substituted in prod deployment params."
+                         (property-values-are-correctly-templated {:name "test"
+                                                                   :template "deployment-params"
+                                                                   :env "prod"}
+                                                                  check-prod-deployment-params) => true
+
+                         (provided
+                          (git/repo-path anything) => dummy-repo-path))
+                   (fact "Template values are correctly substituted in poke deployment params."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "deployment-params"
                                                                    :env "poke"}
-                                                                  check-deployment-params) => true
+                                                                  check-poke-deployment-params) => true
 
-                                                                  (provided
-                                                                   (git/repo-path anything) => dummy-repo-path))
+                         (provided
+                          (git/repo-path anything) => dummy-repo-path))
 
                    (fact "Template values are correctly substituted in poke application properties."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "application-properties"
                                                                    :env "poke"}
                                                                   check-app-props) => true
-                                                                  (provided
-                                                                   (git/repo-path anything) => dummy-repo-path))
+                         (provided
+                          (git/repo-path anything) => dummy-repo-path))
 
-                    (fact "Template values are correctly substituted in prod application properties."
+                   (fact "Template values are correctly substituted in prod application properties."
                          (property-values-are-correctly-templated {:name "test"
                                                                    :template "application-properties"
                                                                    :env "prod"}
                                                                   check-app-props) => true
-                                                                  (provided
-                                                                   (git/repo-path anything) => dummy-repo-path)))
+                         (provided
+                          (git/repo-path anything) => dummy-repo-path)))
 
             (facts "****** About updating application properties ******"
 
