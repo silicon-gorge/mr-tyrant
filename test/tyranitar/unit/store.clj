@@ -27,16 +27,12 @@
 (defn check-poke-deployment-params
   [props template-params]
   (let [name (:name template-params)]
-    (and
-     (= name (:selectedLoadBalancers props))
-     (= ["Brislabs-8080" "Brislabs-SSH"] (:selectedSecurityGroups props)))))
+    (= ["Brislabs-8080" "Brislabs-SSH"] (:selectedSecurityGroups props))))
 
 (defn check-prod-deployment-params
   [props template-params]
   (let [name (:name template-params)]
-    (and
-     (= name (:selectedLoadBalancers props))
-     (= ["internal-8080" "ICM Scanning" "AppGate"] (:selectedSecurityGroups props)))))
+    (= ["internal-8080" "ICM Scanning" "AppGate"] (:selectedSecurityGroups props))))
 
 (defn is-correct-val-for-env
   [env val]

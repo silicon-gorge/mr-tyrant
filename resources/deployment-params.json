@@ -1,7 +1,5 @@
 {
   "healthCheckType" : "EC2",
-  "notificationDestination" : "contact.email@nokia.com",
-  "selectedLoadBalancers" : "{{app-name}}",
   "instanceType" : "{{instance-type}}",
   "selectedSecurityGroups" : [
     "{{web-security-group}}",
