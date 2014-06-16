@@ -27,7 +27,9 @@
         (request :get "/1.x/status") => (contains {:status 200}))
 
   (fact "Healthcheck returns ok"
-        (request :get "/healthcheck") => (contains {:status 200}))
+        (request :get "/healthcheck") => (contains {:status 200})
+        (provided
+         (store/git-connection-working?) => true))
 
   (fact "Invalid environment name results in not found response"
         (request :get "/1.x/applications/wrongenv") => (contains {:status 404}))
