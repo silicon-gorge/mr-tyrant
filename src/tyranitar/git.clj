@@ -1,10 +1,11 @@
 (ns tyranitar.git
-  (:require [environ.core :refer [env]]
+  (:require [cheshire.core :refer [parse-string]]
+            [clj-time
+             [coerce :refer [from-long]]
+             [format :refer [unparse formatters]]]
             [clojure.java.io :refer [as-file]]
             [clojure.tools.logging :as log]
-            [clj-time.coerce :refer [from-long]]
-            [clj-time.format :refer [unparse formatters]]
-            [cheshire.core :refer [parse-string]]
+            [environ.core :refer [env]]
             [me.raynes.conch :as conch])
   (:import [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
@@ -14,29 +15,6 @@
            [com.jcraft.jsch JSch]
            [java.io ByteArrayInputStream]))
 
-;; Reinstate this if you want low-level logging of GIT operations.
-;; (def ^{:dynamic true}
-;;   ssh-log-levels
-;;   (atom
-;;    {com.jcraft.jsch.Logger/DEBUG :trace
-;;     com.jcraft.jsch.Logger/INFO :debug
-;;     com.jcraft.jsch.Logger/WARN :warn
-;;     com.jcraft.jsch.Logger/ERROR :error
-;;     com.jcraft.jsch.Logger/FATAL :fatal}))
-;;
-;; (deftype SshLogger
-;;    [log-level]
-;;    com.jcraft.jsch.Logger
-;;    (isEnabled
-;;     [_ level]
-;;     (>= level log-level))
-;;    (log
-;;     [_ level message]
-;;     (log/log "clj-ssh.ssh" (@ssh-log-levels level) nil message)))
-;;
-;; (JSch/setLogger (SshLogger. com.jcraft.jsch.Logger/DEBUG))
-
-; The private key of the tyranitar-bot installed in SNC. Shouldn't change.
 (def tyranitar-private-key
   "-----BEGIN RSA PRIVATE KEY-----
 MIIEoQIBAAKCAQEA0URSQjQT7uYXG42k3X9hvKPvD1SQQBRQImmoGRh2xBL8k7In
@@ -66,7 +44,6 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
 0cxpDojs3XizG/0FEd4J9UscdrrqHWFZ1grLNYd3orcxhDcpcg==
 -----END RSA PRIVATE KEY-----")
 
-;; The known-hosts, i.e. source.nokia.com
 (def known-hosts
   "|1|UoVqPabY168wScQJfyEUyDX35Xk=|DTUa0H6lR05jNuvHIMl4ReJLqXM= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
 |1|xtbIYF+FIx2dSIOML++8N0Ohwuw=|f11MX7uxFmdYTaPNxh961FunJI0= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
@@ -107,15 +84,14 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   (log/debug "First ensuring that repository directory does not exist")
   (rm "-rf" (repo-path repo-name))
   (log/debug "Cloning repository to" (repo-path repo-name))
-  (->
-   (Git/cloneRepository)
-   (.setURI (repo-url repo-name))
-   (.setDirectory (as-file (repo-path repo-name)))
-   (.setRemote "origin")
-   (.setBranch "master")
-   (.setBare false)
-   (.setTimeout git-timeout)
-   (.call))
+  (-> (Git/cloneRepository)
+      (.setURI (repo-url repo-name))
+      (.setDirectory (as-file (repo-path repo-name)))
+      (.setRemote "origin")
+      (.setBranch "master")
+      (.setBare false)
+      (.setTimeout git-timeout)
+      (.call))
   (log/debug "Cloning completed."))
 
 (defn pull-repo
@@ -123,18 +99,16 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [repo-name]
   (let [git (Git/open (as-file (repo-path repo-name)))]
     (log/debug "Fetching repository to" (repo-path repo-name))
-    (->
-     (.fetch git)
-     (.setTimeout git-timeout)
-     (.call))
+    (-> (.fetch git)
+        (.setTimeout git-timeout)
+        (.call))
     (log/debug "Fetch completed.")
     (let [repo (.getRepository git)
           origin-master (.resolve repo "origin/master")]
       (log/debug "Merging origin/master.")
-      (->
-       (.merge git)
-       (.include origin-master)
-       (.call))
+      (-> (.merge git)
+          (.include origin-master)
+          (.call))
       (log/debug "Merge completed."))))
 
 (defn get-exact-commit
@@ -169,10 +143,9 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
   [repo-name]
   (log/debug "Attempting to get recent commits for repository" repo-name)
   (let [git (Git/open (as-file (repo-path repo-name)))
-        commits (->
-                 (.log git)
-                 (.setMaxCount 20)
-                 (.call))]
+        commits (-> (.log git)
+                    (.setMaxCount 20)
+                    (.call))]
     {:commits (reduce (fn [v i] (conj v (commit-to-map i))) [] commits)}))
 
 (defn commit-and-push
@@ -182,24 +155,20 @@ FaUCgYBU1g2ELThjbyh+aOEfkRktud1NVZgcxX02nPW8php0B1+cb7o5gq5I8Kd8
         add (.add git)
         commit (.commit git)
         push (.push git)]
-    (->
-     add
-     (.addFilepattern ".")
-     (.call))
-    (->
-     commit
-     (.setAuthor "tyranitar" "noreply@nokia.com")
-     (.setMessage message)
-     (.call))
-    (->
-     push
-     (.setTimeout git-timeout)
-     (.call))))
+    (-> add
+        (.addFilepattern ".")
+        (.call))
+    (-> commit
+        (.setAuthor "tyranitar" "noreply@nokia.com")
+        (.setMessage message)
+        (.call))
+    (-> push
+        (.setTimeout git-timeout)
+        (.call))))
 
 (defn can-connect
   "Checks that we can connect to the given repo's remote."
   [repo-name]
-  (->
-   (Git/open (as-file (repo-path repo-name)))
-   (.lsRemote)
-   (.call)))
+  (-> (Git/open (as-file (repo-path repo-name)))
+      (.lsRemote)
+      (.call)))

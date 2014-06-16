@@ -1,41 +1,45 @@
 (ns tyranitar.web
-  (:require [tyranitar
+  (:require [cheshire.core :as json]
+            [clojure.string :refer [split]]
+            [clojure.tools.logging :refer [info warn error]]
+            [compojure
+             [core :refer [defroutes context GET PUT POST DELETE]]
+             [handler :as handler]
+             [route :as route]]
+            [environ.core :refer [env]]
+            [metrics.ring
+             [expose :refer [expose-metrics-as-json]]
+             [instrument :refer [instrument]]]
+            [nokia.ring-utils
+             [error :refer [wrap-error-handling error-response]]
+             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+            [ring.middleware
+             [format-params :refer [wrap-json-kw-params]]
+             [format-response :refer [wrap-json-response]]
+             [params :refer [wrap-params]]]
+            [slingshot.slingshot :refer [try+]]
+            [tyranitar
              [git :as git]
              [pokemon :as pokemon]
              [store :as store]])
-  (:require [compojure.core :refer [defroutes context GET PUT POST DELETE]]
-            [compojure.route :as route]
-            [compojure.handler :as handler]
-            [cheshire.core :as json]
-            [ring.middleware.format-response :refer [wrap-json-response]]
-            [ring.middleware.params :refer [wrap-params]]
-            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-            [clojure.data.xml :refer [element emit-str]]
-            [clojure.string :refer [split]]
-            [clojure.tools.logging :refer [info warn error]]
-            [environ.core :refer [env]]
-            [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
-            [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
-            [metrics.ring.expose :refer [expose-metrics-as-json]]
-            [metrics.ring.instrument :refer [instrument]]
-            [slingshot.slingshot :refer [try+]])
   (:import [org.eclipse.jgit.api.errors GitAPIException]))
 
 (def json-content-type "application/json;charset=utf-8")
 
 (def plain-text "text/plain;charset=utf-8")
 
-(def category-regex #"application-properties|launch-data|deployment-params")
+(def category-regex #"application-properties|deployment-params|launch-data")
 
 (def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
 
-(def env-regex #"dev|prod|poke")
+(def env-regex #"dev|poke|prod")
 
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
   (alter-var-root #'*version* (fn [_] version)))
 
-(defn response [data & [content-type status]]
+(defn response
+  [data & [content-type status]]
   {:status (or status 200)
    :headers {"Content-Type" (or content-type json-content-type)}
    :body data})
@@ -43,12 +47,10 @@
 (defn- status
   []
   (let [git-ok (not (nil? (store/git-connection-working?)))]
-    (->
-     {:name "tyranitar"
-      :version *version*
-      :success git-ok
-      :dependencies [{:name "snc" :success git-ok}]}
-     (response))))
+    (response {:name "tyranitar"
+               :version *version*
+               :success git-ok
+               :dependencies [{:name "snc" :success git-ok}]})))
 
 (defn- get-data
   [env app commit category]
@@ -63,11 +65,10 @@
     (error-response (str "Application '" app "' does not exist.") 404)))
 
 (defn- create-application
-  [body]
-  (let [data (json/parse-string (slurp body) true)]
-    (try+
-     (response (store/create-application (:name data)) json-content-type 201)
-     (catch [:status 422] e (error-response (str "Could not create application '" (:name data) "', message: " (:message e)) 409)))))
+  [name]
+  (try+
+   (response (store/create-application name) json-content-type 201)
+   (catch [:status 422] e (error-response (str "Could not create application '" name "', message: " (:message e)) 409))))
 
 (defn read-json-body
   "Reads HTTP JSON input into a nice map."
@@ -87,8 +88,8 @@
        (response {:applications (store/get-repository-list)}))
 
   (POST "/"
-        {body :body}
-        (create-application body))
+        [name]
+        (create-application name))
 
   (GET ["/:env" :env env-regex]
        [env]
@@ -111,24 +112,30 @@
    "/1.x" []
 
    (GET "/ping"
-        [] "pong")
+        []
+        "pong")
 
    (GET "/status"
-        [] (status))
+        []
+        (status))
 
    (GET "/pokemon"
-        [] (response pokemon/pokemon plain-text))
+        []
+        (response pokemon/pokemon plain-text))
 
-   (GET "/icon" []
+   (GET "/icon"
+        []
         {:status 200
          :headers {"Content-Type" "image/jpeg"}
          :body (-> (clojure.java.io/resource "tyranitar.jpg")
                    (clojure.java.io/input-stream))})
 
    (context "/applications"
-            [] applications-routes))
+            []
+            applications-routes))
 
-  (GET "/healthcheck" []
+  (GET "/healthcheck"
+       []
        (if (store/git-connection-working?)
          (response "I am healthy. Thank you for asking." plain-text)
          (response "I am unwell. Can't talk to remote git repository." plain-text 500)))
@@ -140,7 +147,7 @@
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
-      (wrap-keyword-params)
-      (wrap-params)
       (wrap-json-response)
+      (wrap-json-kw-params)
+      (wrap-params)
       (expose-metrics-as-json)))

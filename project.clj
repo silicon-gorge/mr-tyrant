@@ -2,41 +2,35 @@
   :description "Tyranitar service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Tyranitar"
 
-  :dependencies [[ch.qos.logback/logback-classic "1.1.1"]
+  :dependencies [[ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
-                 [clj-http "0.7.9"]
-                 [clj-time "0.6.0"]
+                 [clj-http "0.9.2"]
+                 [clj-time "0.7.0"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]
-                 [com.ovi.common.metrics/metrics-graphite "2.1.23"]
-                 [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
+                 [com.ovi.common.metrics/metrics-graphite "2.1.25"]
+                 [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
                  [de.ubercode.clostache/clostache "1.3.1"]
-                 [environ "0.4.0"]
-                 [me.raynes/conch "0.5.1"]
-                 [metrics-clojure "1.0.1"]
-                 [metrics-clojure-ring "1.0.1"]
-                 [nokia/instrumented-ring-jetty-adapter "0.1.8"]
-                 [nokia/ring-utils "1.2.1"]
-                 [org.clojure/clojure "1.5.1"]
-                 [org.clojure/data.json "0.2.4"]
-                 [org.clojure/data.xml "0.0.7"]
+                 [environ "0.5.0"]
+                 [me.raynes/conch "0.7.0"]
+                 [metrics-clojure "1.1.0"]
+                 [metrics-clojure-ring "1.1.0"]
+                 [nokia/instrumented-ring-jetty-adapter "0.1.9"]
+                 [nokia/ring-utils "1.2.4"]
+                 [org.clojure/clojure "1.6.0"]
                  [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
-                 [org.eclipse.jetty/jetty-server "8.1.14.v20131031"]
-                 [org.eclipse.jgit "3.0.0.201306101825-r"]
-                 [org.slf4j/jcl-over-slf4j "1.7.6"]
-                 [org.slf4j/jul-to-slf4j "1.7.6"]
-                 [org.slf4j/log4j-over-slf4j "1.7.6"]
-                 [org.slf4j/slf4j-api "1.7.6"]
+                 [org.eclipse.jetty/jetty-server "8.1.15.v20140411"]
+                 [org.eclipse.jgit "3.4.0.201406110918-r"]
+                 [org.slf4j/jcl-over-slf4j "1.7.7"]
+                 [org.slf4j/jul-to-slf4j "1.7.7"]
+                 [org.slf4j/log4j-over-slf4j "1.7.7"]
+                 [org.slf4j/slf4j-api "1.7.7"]
                  [ring-middleware-format "0.3.2"]]
 
   :exclusions [commons-logging
                log4j]
 
-  :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.37"
-                                   :exclusions [javax.servlet/servlet-api
-                                                org.eclipse.jetty.orbit/javax.servlet]]
-                                  [midje "1.6.2"]
-                                  [rest-cljer "0.1.11"]]
+  :profiles {:dev {:dependencies [[midje "1.6.3"]]
                    :plugins [[lein-rpm "0.0.5"]
                              [lein-midje "3.1.3"]
                              [jonase/kibit "0.0.8"]]}}
@@ -45,7 +39,6 @@
             [lein-environ "0.4.0"]
             [lein-release "1.0.73"]]
 
-  ;; development token values
   :env {:environment-name "Dev"
         :service-name "tyranitar"
         :service-port "8080"
@@ -82,6 +75,8 @@
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
   :uberjar-name "tyranitar.jar"
+
+  :eastwood {:namespaces [:source-paths]}
 
   :rpm {:name "tyranitar"
         :summary "RPM for Tyranitar service"

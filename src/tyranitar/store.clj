@@ -1,13 +1,13 @@
 (ns tyranitar.store
-  (:require [tyranitar.git :as git])
-  (:require [environ.core :refer [env]]
-            [cheshire.core :as json]
+  (:require [cheshire.core :as json]
             [clj-http.client :as http]
-            [clojure.tools.logging :as log]
             [clojure.java.io :refer [as-file]]
             [clojure.string :refer [upper-case split]]
+            [clojure.tools.logging :as log]
             [clostache.parser :as templates]
-            [slingshot.slingshot :refer [throw+]])
+            [environ.core :refer [env]]
+            [slingshot.slingshot :refer [throw+]]
+            [tyranitar.git :as git])
   (:import [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException]))
 
@@ -45,7 +45,7 @@
   (.exists (as-file (git/repo-path repo-name))))
 
 (defn- ensure-repo-up-to-date
-  "Gets or updates the specified repo from GIT"
+  "Gets or updates the specified repo from Git"
   [repo-name]
   (if (repo-exists? repo-name)
     (git/pull-repo repo-name)
@@ -54,7 +54,7 @@
       (git/clone-repo repo-name))))
 
 (defn get-data
-   "Fetches the data corresponding to the given params from GIT"
+   "Fetches the data corresponding to the given params from Git"
   [env app commit category]
   (let [repo-name (repo-name app env)]
     (try
@@ -124,7 +124,7 @@
     result))
 
 (defn get-repository-list
-  "Returns a list of all repositories that exist in the tyranitar git SNC project."
+  "Returns a list of all repositories that exist in the tyranitar Git SNC project."
   ([]
      (process-repository-list (get-repo-list-from-snc)))
   ([env]
@@ -155,12 +155,10 @@
   [app-name template env]
   (let [data (if (= "prod" env) (prod-properties app-name env) (poke-properties app-name env))
         dest-path (dest-path app-name env template)]
-    (->>
-     (templates/render-resource (str template ".json") data)
-     (spit dest-path))))
+    (spit dest-path (templates/render-resource (str template ".json") data))))
 
 (defn- write-default-properties
-  "Writes a default set of service properties to the GIT repo file location."
+  "Writes a default set of service properties to the Git repo file location."
   [app-name env]
   (let [repo-path (git/repo-path (repo-name app-name env))]
     (write-templated-properties app-name "application-properties" env)
@@ -182,7 +180,7 @@
                   (create-application-env name "prod")]})
 
 (defn write-properties-file
-  "Writes the given properties to the appropriate local GIT file."
+  "Writes the given properties to the appropriate local Git file."
   [app-name env category props]
   (let [dest-path (dest-path app-name env category)]
     (spit dest-path (json/generate-string props {:pretty true}))))

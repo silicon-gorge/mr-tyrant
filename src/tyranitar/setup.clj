@@ -1,32 +1,31 @@
 (ns tyranitar.setup
-    (:require [tyranitar.web :as web]
-              [environ.core :refer [env]]
-              [clojure.string :as cs :only (split)]
+    (:require [clojure.java.io :as io]
               [clojure.tools.logging :refer (info warn error)]
-              [clojure.java.io :as io]
-              [nokia.adapter.instrumented-jetty :refer [run-jetty]])
-    (:import (java.lang Integer Throwable)
-             (java.util.logging LogManager)
-             (com.yammer.metrics Metrics)
-             (com.yammer.metrics.core MetricName)
-             (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
+              [environ.core :refer [env]]
+              [nokia.adapter.instrumented-jetty :refer [run-jetty]]
+              [tyranitar.web :as web])
+    (:import (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
              (com.ovi.common.metrics HostnameFactory)
-             (org.slf4j.bridge SLF4JBridgeHandler)
-             (java.util.concurrent TimeUnit))
+             (java.lang Integer Throwable)
+             (java.util.concurrent TimeUnit)
+             (java.util.logging LogManager)
+             (org.slf4j.bridge SLF4JBridgeHandler))
     (:gen-class))
 
-(defn read-file-to-properties [file-name]
+(defn read-file-to-properties
+  [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]
     (let [props (java.util.Properties.)]
       (.load props reader)
       (into {} (for [[k v] props] [k v])))))
 
-(defn configure-logging []
+(defn configure-logging
+  []
   (.reset (LogManager/getLogManager))
-  ;Route all java.util.logging log statements to slf4j
   (SLF4JBridgeHandler/install))
 
-(defn start-graphite-reporting []
+(defn start-graphite-reporting
+  []
   (let [graphite-prefix (new GraphiteName
                              (into-array Object
                                          [(env :environment-name)
@@ -45,25 +44,31 @@
            ((read-file-to-properties path) "version")
            "localhost")))
 
-(defn setup []
+(defn setup
+  []
   (web/set-version! @version)
   (configure-logging)
   (start-graphite-reporting))
 
-(def server (atom nil))
+(def server
+  (atom nil))
 
-(defn start-server []
+(defn start-server
+  []
   (run-jetty #'web/app {:port (Integer. (env :service-port))
                         :join? false
                         :stacktraces? (not (Boolean/valueOf (env :service-production)))
                         :auto-reload? (not (Boolean/valueOf (env :service-production)))}))
 
-(defn start []
-  (do
-    (setup)
-    (reset! server (start-server))))
+(defn start
+  []
+  (setup)
+  (reset! server (start-server)))
 
-(defn stop [] (if-let [server @server] (.stop server)))
+(defn stop
+  []
+  (if-let [server @server] (.stop server)))
 
-(defn -main [& args]
+(defn -main
+  [& args]
   (start))
