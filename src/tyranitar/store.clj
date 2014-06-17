@@ -120,7 +120,7 @@
   [list]
   (let [data (map data-from-repo-item list)
         grouped-app-list (group-by :app data)
-        result (into {} (map (fn [[k v]] {(keyword k) {:repositories (mapv #(dissoc % :app :env) v)}}) grouped-app-list))]
+        result (into (sorted-map) (map (fn [[k v]] {(keyword k) {:repositories (mapv #(dissoc % :app :env) v)}}) grouped-app-list))]
     result))
 
 (defn get-repository-list
