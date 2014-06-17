@@ -3,7 +3,10 @@
               [clojure.tools.logging :refer (info warn error)]
               [environ.core :refer [env]]
               [nokia.adapter.instrumented-jetty :refer [run-jetty]]
-              [tyranitar.web :as web])
+              [tyranitar
+               [environments :as environments]
+               [store :as store]
+               [web :as web]])
     (:import (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
              (com.ovi.common.metrics HostnameFactory)
              (java.lang Integer Throwable)
@@ -48,7 +51,9 @@
   []
   (web/set-version! @version)
   (configure-logging)
-  (start-graphite-reporting))
+  (start-graphite-reporting)
+  (environments/init)
+  (store/init))
 
 (def server
   (atom nil))

@@ -3,6 +3,7 @@
             [clojure.java.io :as io]
             [midje.sweet :refer :all]
             [tyranitar
+             [environments :as environments]
              [git :as git]
              [store :refer :all]]))
 
@@ -96,3 +97,11 @@
        (get-data "poke" "dummy" "head" "dummy-props") => dummy-data
        (spit "/tmp/repos/dummy-poke/dummy-props.json" (json/generate-string expected-update {:pretty true})) => anything
        (git/commit-and-push anything anything) => anything))
+
+(fact "that when creating applications we go through each of them"
+      (create-application "application") => {:repositories ["repoenv2" "repoenv1"]}
+      (provided
+       (environments/default-environments) => {:env1 {:name "env1"}
+                                               :env2 {:name "env2"}}
+       (create-application-env "application" "env1") => "repoenv1"
+       (create-application-env "application" "env2") => "repoenv2"))

@@ -6,7 +6,8 @@
                  [cheshire "5.3.1"]
                  [clj-http "0.9.2"]
                  [clj-time "0.7.0"]
-                 [com.ovi.common.logging/logback-appender "0.0.45"]
+                 [com.cemerick/url "0.1.1"]
+                 [com.ovi.common.logging/logback-appender "0.0.47"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.25"]
                  [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
                  [de.ubercode.clostache/clostache "1.3.1"]
@@ -25,6 +26,7 @@
                  [org.slf4j/jul-to-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
                  [org.slf4j/slf4j-api "1.7.7"]
+                 [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.3.2"]]
 
   :exclusions [commons-logging
@@ -51,6 +53,7 @@
         :service-graphite-post-interval "15"
         :service-graphite-post-unit "SECONDS"
         :service-graphite-enabled "DISABLED"
+        :service-onix-url "http://onix:8080"
         :service-production "false"
 
         :service-base-git-repository-url "ssh://snc@source.nokia.com/tyranitar/git/"

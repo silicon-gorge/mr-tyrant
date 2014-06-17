@@ -6,10 +6,19 @@
             [clojure.tools.logging :as log]
             [clostache.parser :as templates]
             [environ.core :refer [env]]
+            [overtone.at-at :as at]
             [slingshot.slingshot :refer [throw+]]
-            [tyranitar.git :as git])
+            [tyranitar
+             [environments :as environments]
+             [git :as git]])
   (:import [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException]))
+
+(def ^:private pool
+  (atom nil))
+
+(def ^:private git-health-atom
+  (atom false))
 
 (defn- poke-properties
   "Default properties for poke environment"
@@ -61,13 +70,13 @@
       (ensure-repo-up-to-date repo-name)
       (git/get-exact-commit repo-name category (upper-case commit))
       (catch InvalidRemoteException e
-        (log/warn (str "Can't communicate with remote repo '" repo-name "': " e))
+        (log/warn e (str "Can't communicate with remote repo '" repo-name "'"))
         nil)
       (catch NullPointerException e
-        (log/warn (str "Revision '" commit "' not found in repo '" repo-name "': " e))
+        (log/warn e (str "Revision '" commit "' not found in repo '" repo-name "'"))
         nil)
       (catch MissingObjectException e
-        (log/warn (str "Missing object for revision '" commit "' in repo '" repo-name "': " e))
+        (log/warn e (str "Missing object for revision '" commit "' in repo '" repo-name "'"))
         nil))))
 
 (defn get-commits
@@ -78,19 +87,20 @@
       (ensure-repo-up-to-date repo-name)
       (git/fetch-recent-commits repo-name)
       (catch InvalidRemoteException e
-        (log/warn (str "Can't communicate with remote repo '" repo-name "': " e))
+        (log/warn e (str "Can't communicate with remote repo '" repo-name "'"))
         nil))))
 
-(defn git-connection-working?
+(defn- git-connection-working?
   "Returns true if the remote repository is available and behaving as expected"
   []
   (let [repo-name (repo-name "tyranitar" "poke")]
     (try
       (when-not (repo-exists? repo-name)
         (git/clone-repo repo-name))
-      (git/can-connect repo-name)
+      (some? (git/can-connect repo-name))
       (catch Exception e
-        (log/warn "Cannot connect to repository!" e)))))
+        (log/warn e "Cannot connect to repository!")
+        false))))
 
 (def snc-url
   (str (env :service-snc-api-base-url)
@@ -165,19 +175,20 @@
     (write-templated-properties app-name "deployment-params" env)
     (write-templated-properties app-name "launch-data" env)))
 
-(defn- create-application-env
-  [name env]
-  (let [repo-name (repo-name name env)]
-    (create-repository name env)
+(defn create-application-env
+  [application environment]
+  (let [repo-name (repo-name application environment)]
+    (create-repository application environment)
     (git/clone-repo repo-name)
-    (write-default-properties name env)
+    (write-default-properties application environment)
     (git/commit-and-push repo-name "Initial properties files.")
     {:name repo-name :path (git/repo-url repo-name)}))
 
 (defn create-application
-  [name]
-  {:repositories [(create-application-env name "poke")
-                  (create-application-env name "prod")]})
+  [application]
+  (let [default-environments (environments/default-environments)
+        repos (map (fn [[k _]] (create-application-env application (name k))) default-environments)]
+    {:repositories repos}))
 
 (defn write-properties-file
   "Writes the given properties to the appropriate local Git file."
@@ -193,3 +204,21 @@
     (write-properties-file app-name env category updated)
     (git/commit-and-push (repo-name app-name env) "Updated properties")
     (get-data env app-name "head" category)))
+
+(defn update-git-health
+  []
+  (reset! git-health-atom (git-connection-working?)))
+
+(defn git-healthy?
+  []
+  @git-health-atom)
+
+(defn create-pool
+  []
+  (when-not @pool
+    (reset! pool (at/mk-pool :cpu-count 1))))
+
+(defn init
+  []
+  (create-pool)
+  (at/interspaced (* 1000 12) update-git-health @pool :initial-delay 0))

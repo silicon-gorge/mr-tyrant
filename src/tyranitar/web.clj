@@ -19,6 +19,7 @@
              [params :refer [wrap-params]]]
             [slingshot.slingshot :refer [try+]]
             [tyranitar
+             [environments :as environments]
              [git :as git]
              [pokemon :as pokemon]
              [store :as store]])
@@ -44,13 +45,19 @@
    :headers {"Content-Type" (or content-type json-content-type)}
    :body data})
 
-(defn- status
+(defn unknown-environment-response
   []
-  (let [git-ok (not (nil? (store/git-connection-working?)))]
-    (response {:name "tyranitar"
-               :version *version*
-               :success git-ok
-               :dependencies [{:name "snc" :success git-ok}]})))
+  (response (str "Unknown environment") plain-text 404))
+
+(defn- healthcheck
+  []
+  (let [git-ok? (store/git-healthy?)
+        environments-ok? (some? (environments/environments))]
+    {:name "tyranitar"
+     :version *version*
+     :success (and git-ok? environments-ok?)
+     :dependencies [{:name "snc" :success git-ok?}
+                    {:name "environments" :success environments-ok?}]}))
 
 (defn- get-data
   [env app commit category]
@@ -68,7 +75,8 @@
   [name]
   (try+
    (response (store/create-application name) json-content-type 201)
-   (catch [:status 422] e (error-response (str "Could not create application '" name "', message: " (:message e)) 409))))
+   (catch [:status 422] e
+     (error-response (str "Could not create application '" name "', message: " (:message e)) 409))))
 
 (defn read-json-body
   "Reads HTTP JSON input into a nice map."
@@ -80,7 +88,11 @@
   (try
     (response (store/update-properties app-name env category (read-json-body properties)))
     (catch GitAPIException e
-      (error-response (str "Unable to store update to GIT: " e ) 409))))
+      (error-response (str "Unable to store update in Git, message: " (:message e)) 409))))
+
+(defn known-environment?
+  [environment]
+  (contains? (environments/environments) (keyword environment)))
 
 (defroutes applications-routes
   (GET "/"
@@ -91,21 +103,29 @@
         [name]
         (create-application name))
 
-  (GET ["/:env" :env env-regex]
+  (GET ["/:env"]
        [env]
-       (response {:applications (store/get-repository-list env)}))
+       (if (known-environment? env)
+         (response {:applications (store/get-repository-list env)})
+         (unknown-environment-response)))
 
-  (GET ["/:env/:app" :env env-regex]
+  (GET ["/:env/:app"]
        [env app]
-       (get-list env app))
+       (if (known-environment? env)
+         (get-list env app)
+         (unknown-environment-response)))
 
-  (GET ["/:env/:app/:commit/:category" :env env-regex :commit commit-regex :category category-regex]
+  (GET ["/:env/:app/:commit/:category" :commit commit-regex :category category-regex]
        [env app commit category]
-       (get-data env app commit category))
+       (if (known-environment? env)
+         (get-data env app commit category)
+         (unknown-environment-response)))
 
-  (POST ["/:env/:app/:category" :env env-regex :category category-regex]
+  (POST ["/:env/:app/:category" :category category-regex]
         [env app category :as req]
-        (update-properties app env category (:body req))))
+        (if (known-environment? env)
+          (update-properties app env category (:body req))
+          (unknown-environment-response))))
 
 (defroutes routes
   (context
@@ -117,7 +137,7 @@
 
    (GET "/status"
         []
-        (status))
+        (response (healthcheck) json-content-type 200))
 
    (GET "/pokemon"
         []
@@ -136,9 +156,9 @@
 
   (GET "/healthcheck"
        []
-       (if (store/git-connection-working?)
-         (response "I am healthy. Thank you for asking." plain-text)
-         (response "I am unwell. Can't talk to remote git repository." plain-text 500)))
+       (let [healthcheck-result (healthcheck)
+             status (if (:success healthcheck-result) 200 500)]
+         (response healthcheck-result json-content-type status)))
 
   (route/not-found (error-response "Resource not found" 404)))
 

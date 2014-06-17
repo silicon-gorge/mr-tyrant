@@ -4,6 +4,7 @@
             [ring.util.io :refer [string-input-stream]]
             [slingshot.support :as s]
             [tyranitar
+             [environments :as environments]
              [store :as store]
              [web :refer :all]])
   (:import [org.eclipse.jgit.api.errors GitAPIException InvalidRemoteException]))
@@ -72,49 +73,62 @@
 (fact "that status returns ok"
       (request :get "/1.x/status") => (contains {:status 200})
       (provided
-       (store/git-connection-working?) => true))
+       (store/git-healthy?) => true
+       (environments/environments) => {}))
 
 (fact "that an unknown environment name results in not found response"
-      (request :get "/1.x/applications/wrongenv") => (contains {:status 404}))
+      (request :get "/1.x/applications/unknown") => (contains {:status 404}))
 
-(fact "that the environment name 'poke' is accepted"
+(fact "that a known environment is accepted"
       (request :get "/1.x/applications/poke") => (contains {:status 200})
       (provided
+       (environments/environments) => {:poke {}}
        (store/get-repository-list "poke") => {}))
 
-(fact "that getting commits for application and dev environment works"
+(fact "that getting commits for an application in a known environment works"
       (request :get "/1.x/applications/dev/test") => (contains {:status 200})
       (provided
+       (environments/environments) => {:dev {}}
        (store/get-commits "dev" "test") => []))
 
-(fact "that getting commits for application and prod environment works"
-      (request :get "/1.x/applications/prod/test") => (contains {:status 200})
+(fact "that getting commits for an application in an unknown environment is a 404"
+      (request :get "/1.x/applications/dev/test") => (contains {:status 404})
       (provided
-       (store/get-commits "prod" "test") => []))
+       (environments/environments) => {}))
 
 (fact "that getting commits for application that doesn't exist results in not found response"
       (request :get "/1.x/applications/prod/test") => (contains {:status 404})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-commits "prod" "test") => nil))
+
+(fact "that getting a commit for an application in an unknown environment is a 404"
+      (request :get "/1.x/applications/prod/test/head/application-properties") => (contains {:status 404})
+      (provided
+       (environments/environments) => {}))
 
 (fact "that getting the head -n commit for application works"
       (request :get "/1.x/applications/prod/test/head~2/application-properties") => (contains {:status 200})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head~2" "application-properties") => []))
 
 (fact "that getting the head commit for application works"
       (request :get "/1.x/applications/prod/test/head/application-properties") => (contains {:status 200})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "application-properties") => []))
 
 (fact "that getting a specific commit for application works"
       (request :get "/1.x/applications/prod/test/921f195c98570550e743911bc3f5aca260d73f6f/application-properties") => (contains {:status 200})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "921f195c98570550e743911bc3f5aca260d73f6f" "application-properties") => []))
 
 (fact "that getting a specific commit which doesn't exist results in a not found response"
       (request :get "/1.x/applications/prod/application/HEAD/application-properties") => (contains {:status 404})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "application" "HEAD" "application-properties") => nil))
 
 (fact "that getting an invalid commit value results in not found response"
@@ -123,22 +137,31 @@
 (fact "that getting deployment-params works"
       (request :get "/1.x/applications/prod/test/head/deployment-params") => (contains {:status 200})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "deployment-params") => []))
 
 (fact "that getting launch-data works"
       (request :get "/1.x/applications/prod/test/head/launch-data") => (contains {:status 200})
       (provided
+       (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "launch-data") => []))
 
 (fact "that updating properties is called with the correct params"
       (request :post "/1.x/applications/dev/testapp/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 200})
       (provided
+       (environments/environments) => {:dev {}}
        (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"}) => {:dummy "value"}))
 
 (fact "that a Git failure returns correct error response"
       (request :post "/1.x/applications/dev/testapp/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 409})
       (provided
+       (environments/environments) => {:dev {}}
        (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"}) =throws=> (InvalidRemoteException. "GIT update failed!")))
+
+(fact "that updating properties for an unknown environment is a 404"
+      (request :post "/1.x/applications/prod/app/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 404})
+      (provided
+       (environments/environments) => {}))
 
 (fact "that our pokémon resource works"
       (request :get "/1.x/pokemon") => (contains {:status 200}))
@@ -146,12 +169,20 @@
 (fact "that our icon resource works"
       (request :get "/1.x/icon") => (contains {:status 200}))
 
-(fact "that our healthcheck gives a 200 response if it's healthy"
+(fact "that our healthcheck gives a 200 response if everything is healthy"
       (request :get "/healthcheck") => (contains {:status 200})
       (provided
-       (store/git-connection-working?) => true))
+       (store/git-healthy?) => true
+       (environments/environments) => {}))
 
-(fact "that our healthcheck gives a 500 response if it's not healthy"
+(fact "that our healthcheck gives a 500 response if Git isn't healthy"
       (request :get "/healthcheck") => (contains {:status 500})
       (provided
-       (store/git-connection-working?) => false))
+       (store/git-healthy?) => false
+       (environments/environments) => {}))
+
+(fact "that our healthcheck gives a 500 response if our environments haven't loaded"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (store/git-healthy?) => true
+       (environments/environments) => nil))
