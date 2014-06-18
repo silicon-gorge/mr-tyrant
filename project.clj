@@ -18,7 +18,6 @@
                  [nokia/instrumented-ring-jetty-adapter "0.1.9"]
                  [nokia/ring-utils "1.2.4"]
                  [org.clojure/clojure "1.6.0"]
-                 [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.eclipse.jetty/jetty-server "8.1.15.v20140411"]
                  [org.eclipse.jgit "3.4.0.201406110918-r"]
