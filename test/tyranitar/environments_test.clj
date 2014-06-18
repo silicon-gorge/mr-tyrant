@@ -17,9 +17,9 @@
 
 (fact "that updating our environments does what we expect"
       (do (reset! environments-atom nil) (update-environments) (environments)) => {:env1 {:name "env1"
-                                                           :metadata {:first "metadata"}}
-                                                    :env2 {:name "env2"
-                                                           :metadata {:second "metadata"}}}
+                                                                                          :metadata {:first "metadata"}}
+                                                                                   :env2 {:name "env2"
+                                                                                          :metadata {:second "metadata"}}}
       (provided
        (onix/environments) => ["env1" "env2"]
        (onix/environment "env1") => {:name "env1" :metadata {:first "metadata"}}
@@ -27,10 +27,10 @@
 
 (fact "that getting default environments works"
       (default-environments) => {:env1 {:name "env1" :metadata {:account "onething"
-                                                                :default true}}}
+                                                                :createRepo true}}}
       (provided
        (environments) => {:env1 {:name "env1"
                                  :metadata {:account "onething"
-                                            :default true}}
+                                            :createRepo true}}
                           :env2 {:name "env2"
                                  :metadata {:account "another"}}}))
