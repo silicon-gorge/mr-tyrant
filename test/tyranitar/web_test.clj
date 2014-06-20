@@ -96,6 +96,23 @@
       (provided
        (environments/environments) => {}))
 
+(fact "that creating a repo for an unknown environment is a 404"
+      (request :post "/1.x/applications/dev/test") => (contains {:status 404})
+      (provided
+       (environments/environments) => {}))
+
+(fact "that creating a repo for a known environment works"
+      (request :post "/1.x/applications/dev/test") => (contains {:status 201})
+      (provided
+       (environments/environments) => {:dev {}}
+       (store/create-application-env "test" "dev") => {}))
+
+(fact "that a 422 error while creating an application in a specific environment is a 409"
+      (request :post "/1.x/applications/dev/test") => (contains {:status 409})
+      (provided
+       (environments/environments) => {:dev {}}
+       (store/create-application-env "test" "dev") =throws=> (slingshot-exception {:status 422})))
+
 (fact "that getting commits for application that doesn't exist results in not found response"
       (request :get "/1.x/applications/prod/test") => (contains {:status 404})
       (provided

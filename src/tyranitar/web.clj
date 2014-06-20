@@ -78,6 +78,13 @@
    (catch [:status 422] e
      (error-response (str "Could not create application '" name "', message: " (:message e)) 409))))
 
+(defn- create-application-env
+  [name env]
+  (try+
+   (response (store/create-application-env name env) json-content-type 201)
+   (catch [:status 422] e
+     (error-response (str "Could not create environment repo '" env "' for application '" name "', message: " (:message e)) 409))))
+
 (defn read-json-body
   "Reads HTTP JSON input into a nice map."
   [body]
@@ -114,6 +121,12 @@
        (if (known-environment? env)
          (get-list env app)
          (unknown-environment-response)))
+
+  (POST "/:env/:app"
+        [env app]
+        (if (known-environment? env)
+          (create-application-env app env)
+          (unknown-environment-response)))
 
   (GET ["/:env/:app/:commit/:category" :commit commit-regex :category category-regex]
        [env app commit category]
