@@ -1,30 +1,42 @@
 (ns tyranitar.store
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]
+            [clj-time.core :as time]
             [clojure.java.io :refer [as-file]]
-            [clojure.string :refer [upper-case split]]
-            [clojure.tools.logging :as log]
+            [clojure.string :as str]
+            [clojure.tools.logging :refer [debug error warn]]
             [clostache.parser :as templates]
             [environ.core :refer [env]]
+            [io.clj.logging :refer [with-logging-context]]
             [overtone.at-at :as at]
             [slingshot.slingshot :refer [throw+]]
-            [tyranitar
-             [environments :as environments]
-             [git :as git]])
-  (:import [org.eclipse.jgit.api.errors InvalidRemoteException]
-           [org.eclipse.jgit.errors MissingObjectException]))
+            [tentacles
+             [data :as data]
+             [repos :as repos]]
+            [tyranitar.environments :as environments]))
 
 (def ^:private pool
   (atom nil))
 
-(def ^:private git-health-atom
+(def ^:private github-health-atom
   (atom false))
+
+(def ^:private repos-atom
+  (atom nil))
+
+(def ^:private organisation
+  (env :github-organisation))
+
+(defn- busted?
+  [response]
+  (if-let [status (:status response)]
+    (or (< status 200) (>= status 400))
+    false))
 
 (defn- poke-properties
   "Default properties for poke environment"
-  [app-name env]
-  {:app-name app-name
-   :env-name env
+  [application environment]
+  {:app-name application
+   :env-name environment
    :error-logging-url "http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x"
    :instance-type "m1.small"
    :graphite-host "carbon.brislabs.com"
@@ -34,9 +46,9 @@
 
 (defn- prod-properties
   "Default properties for prod environment"
-  [app-name env]
-  {:app-name app-name
-   :env-name env
+  [application environment]
+  {:app-name application
+   :env-name environment
    :error-logging-url "http://errorlogging.ent.nokia.com:8080/ErrorLogging/1.x"
    :instance-type "m1.small"
    :graphite-host "carbon.ent.nokia.com"
@@ -46,179 +58,258 @@
    :scanner-security-group "ICM Scanning"})
 
 (defn- repo-name
-  [application env]
-  (str application "-" env))
+  [application environment]
+  (str application "-" environment))
 
-(defn- repo-exists?
-  [repo-name]
-  (.exists (as-file (git/repo-path repo-name))))
-
-(defn- ensure-repo-up-to-date
-  "Gets or updates the specified repo from Git"
-  [repo-name]
-  (if (repo-exists? repo-name)
-    (git/pull-repo repo-name)
-    (do
-      (log/debug (str "Repo '" repo-name "' not found - attempting to clone"))
-      (git/clone-repo repo-name))))
-
-(defn get-data
-   "Fetches the data corresponding to the given params from Git"
-  [env app commit category]
-  (let [repo-name (repo-name app env)]
-    (try
-      (ensure-repo-up-to-date repo-name)
-      (git/get-exact-commit repo-name category (upper-case commit))
-      (catch InvalidRemoteException e
-        (log/warn e (str "Can't communicate with remote repo '" repo-name "'"))
-        nil)
-      (catch NullPointerException e
-        (log/warn e (str "Revision '" commit "' not found in repo '" repo-name "'"))
-        nil)
-      (catch MissingObjectException e
-        (log/warn e (str "Missing object for revision '" commit "' in repo '" repo-name "'"))
-        nil))))
+(defn- extract-commit-info
+  [commit]
+  {:committer (get-in commit [:commit :committer :name])
+   :date (get-in commit [:commit :committer :date])
+   :email (get-in commit [:commit :committer :email])
+   :hash (:sha commit)
+   :message (get-in commit [:commit :message])})
 
 (defn get-commits
   "Get a list of the 20 most recent commits to the repository in most recent first order."
-  [env app]
-  (let [repo-name (repo-name app env)]
-    (try
-      (ensure-repo-up-to-date repo-name)
-      (git/fetch-recent-commits repo-name)
-      (catch InvalidRemoteException e
-        (log/warn e (str "Can't communicate with remote repo '" repo-name "'"))
-        nil))))
+  [environment application]
+  (try
+    (let [repo-name (repo-name application environment)
+          commits (repos/commits organisation repo-name)]
+      (map extract-commit-info (remove empty? commits)))
+    (catch Exception e
+      (with-logging-context {:application application
+                             :environment environment}
+        (error e "Failed to retrieve commits"))
+      (throw+ {:status 500
+               :message "Failed to retrieve commits"}))))
 
-(defn- git-connection-working?
-  "Returns true if the remote repository is available and behaving as expected"
+(defn- is-sha?
+  [commit]
+  (re-matches #"[0-9a-fA-F]{40}" commit))
+
+(defn- generation-from
+  [generation]
+  (cond (= "" generation) 1
+        (nil? generation) 0
+        :else (Integer/valueOf generation)))
+
+(defn- hash-from
+  [url]
+  (second (re-find #"\?ref=(.+)$" url)))
+
+(defn- create-ref-map
+  [environment application commit]
+  (if (is-sha? commit)
+    {:ref commit}
+    (let [generation (generation-from (second (re-matches #"(?:HEAD|head)(?:~(?<generation>[0-9]*))?" commit)))
+          commits (get-commits environment application)]
+      {:ref (:hash (nth commits generation))})))
+
+(defn get-data
+  "Fetches the data corresponding to the given params from Git."
+  [environment application commit category]
+  (let [repo-name (repo-name application environment)
+        ref-map (create-ref-map environment application commit)
+        options (merge ref-map {:str? true})
+        response (repos/contents organisation repo-name (str category ".json") options)]
+    (if-let [data (:content response)]
+      (let [hash (hash-from (:url response))]
+        {:hash hash
+         :data (json/parse-string data true)})
+      nil)))
+
+(defn- extract-repo-info
+  "Pulls the necessary data out of the full Github repo."
+  [repo]
+  (let [parts (str/split (:name repo) #"-")
+        application (first parts)
+        environment (second parts)]
+    (into (sorted-map) (merge (clojure.set/rename-keys (select-keys repo [:name :ssh_url]) {:ssh_url :path})
+                              {:application application
+                               :environment environment}))))
+
+(defn all-repositories
+  "Gets all repositories in the organisation in Github."
   []
-  (let [repo-name (repo-name "tyranitar" "poke")]
-    (try
-      (when-not (repo-exists? repo-name)
-        (git/clone-repo repo-name))
-      (some? (git/can-connect repo-name))
-      (catch Exception e
-        (log/warn e "Cannot connect to repository!")
-        false))))
+  (let [response (repos/org-repos organisation {:all_pages true})]
+    (when-not (busted? response)
+      (doall (map extract-repo-info (remove empty? response))))))
 
-(def snc-url
-  (str (env :service-snc-api-base-url)
-       "projects/tyranitar/repositories?api_username="
-       (env :service-snc-api-username)
-       "&api_secret="
-       (env :service-snc-api-secret)))
-
-(defn- data-from-repo-item
-  [item]
-  (let [name (:name item)
-        name-parts (split name #"-")
-        app-name (first name-parts)
-        env (second name-parts)
-        access-methods (:access_methods item)
-        ssh-repo-path (:uri (first (filterv #(= (:method %) "ssh") access-methods)))]
-    {:app app-name :env env :name name :path ssh-repo-path}))
-
-(defn- get-repo-list-from-snc
-  []
-  (let [response (http/get snc-url {:as :json :throw-exceptions false})
-        body (:body response)]
-    body))
-
-(defn- process-repository-list
-  "Process the list of data returned from SNC into the form that we want."
-  [list]
-  (let [data (map data-from-repo-item list)
-        grouped-app-list (group-by :app data)
-        result (into (sorted-map) (map (fn [[k v]] {(keyword k) {:repositories (mapv #(dissoc % :app :env) v)}}) grouped-app-list))]
-    result))
+(defn process-repositories
+  [repositories]
+  (let [grouped (group-by :application repositories)]
+    (into (sorted-map) (map (fn [[k v]] {(keyword k) {:repositories (map #(dissoc % :application :environment) v)}}) grouped))))
 
 (defn get-repository-list
-  "Returns a list of all repositories that exist in the tyranitar Git SNC project."
-  ([]
-     (process-repository-list (get-repo-list-from-snc)))
-  ([env]
-     (process-repository-list (filter #(.endsWith (:name %) env) (get-repo-list-from-snc)))))
-
-(defn- repo-create-body
-  [name env]
-  (let [repo-name (repo-name name env)]
-      (str "repository[name]=" repo-name "&repository[kind]=Git")))
+  "Returns a list of all repositories that exist in the organisation in Github."
+  ([] (process-repositories @repos-atom))
+  ([environment] (process-repositories (filter #(= (name environment) (:environment %)) @repos-atom))))
 
 (defn- create-repository
-  [name env]
-  (let [response (http/post snc-url {:body (repo-create-body name env)
-                                     :content-type "application/x-www-form-urlencoded"
-                                     :throw-exceptions false})
-        status (:status response)]
-    (when (not= status 200)
-      (throw+ {:status status :message (:message (json/parse-string (:body response) true))}))))
+  [application environment]
+  (try
+    (let [repo-name (repo-name application environment)
+          options {:auto_init true :has-downloads false :has-issues false :has-wiki false :public false}
+          response (repos/create-org-repo organisation repo-name options)]
+      (if (busted? response)
+        (do
+          (with-logging-context {:response response}
+            (warn "Failed to create repository" repo-name))
+          (throw+ {:status 500
+                   :message (format "Failed to create repository %s" repo-name)}))
+        response))
+    (catch Exception e
+      (with-logging-context {:application application
+                             :environment environment}
+        (error e "Failed to create repository"))
+      (throw+ {:status 500
+               :message "Failed to create repository"}))))
 
-(defn dest-path
-  "Gets the file path in the repo to write to for the given params."
-  [app-name env category]
-  (let [repo-path (git/repo-path (repo-name app-name env))]
-    (str repo-path "/" category ".json")))
+(defn- github-working?
+  []
+  (try
+    (let [response (repos/specific-repo organisation "tyranitar-poke")]
+      (not (busted? response)))
+    (catch Exception e
+      false)))
 
-(defn write-templated-properties
-  "Substitutes the application name for placeholders in the given template and writes the file."
-  [app-name template env]
-  (let [data (if (= "prod" env) (prod-properties app-name env) (poke-properties app-name env))
-        dest-path (dest-path app-name env template)]
-    (spit dest-path (templates/render-resource (str template ".json") data))))
+(defn- properties-tree
+  [application environment]
+  (let [data (if (= "prod" environment) (prod-properties application environment) (poke-properties application environment))
+        application-properties (templates/render-resource "application-properties.json" data)
+        deployment-params (templates/render-resource "deployment-params.json" data)
+        launch-data (templates/render-resource "launch-data.json" data)]
+    [{:content application-properties
+      :mode "100644"
+      :path "application-properties.json"
+      :type "blob"}
+     {:content deployment-params
+      :mode "100644"
+      :path "deployment-params.json"
+      :type "blob"}
+     {:content launch-data
+      :mode "100644"
+      :path "launch-data.json"
+      :type "blob"}]))
 
-(defn- write-default-properties
-  "Writes a default set of service properties to the Git repo file location."
-  [app-name env]
-  (let [repo-path (git/repo-path (repo-name app-name env))]
-    (write-templated-properties app-name "application-properties" env)
-    (write-templated-properties app-name "deployment-params" env)
-    (write-templated-properties app-name "launch-data" env)))
+(defn- create-tree
+  [application environment]
+  (try
+    (let [repo-name (repo-name application environment)
+          tree (properties-tree application environment)
+          options {}
+          response (data/create-tree organisation repo-name tree options)]
+      (if (busted? response)
+        (do
+          (with-logging-context {:response response}
+            (warn "Failed to create tree" repo-name))
+          (throw+ {:status 500
+                   :message (format "Failed to create tree %s" repo-name)}))
+        response))
+    (catch Exception e
+      (with-logging-context {:application application
+                             :environment environment}
+        (error e "Failed to create tree"))
+      (throw+ {:status 500
+               :message "Failed to create tree"}))))
+
+(defn- create-commit
+  [application environment tree]
+  (try
+    (let [repo-name (repo-name application environment)
+          date (str (time/now))
+          info {:date date :email "mixradiobot@gmail.com" :name "Mix Radio Bot"}
+          options {:author info :committer info :parents []}
+          response (data/create-commit organisation repo-name "Initial commit" tree options)]
+      (if (busted? response)
+        (do
+          (with-logging-context {:response response}
+            (warn "Failed to create commit" repo-name))
+          (throw+ {:status 500
+                   :message (format "Failed to create commit %s" repo-name)}))
+        response))
+    (catch Exception e
+        (with-logging-context {:application application
+                               :environment environment
+                               :tree tree}
+          (error e "Failed to create commit"))
+        (throw+ {:status 500
+                 :message "Failed to create commit"}))))
+
+(defn- update-ref
+  [application environment commit]
+  (try
+    (let [repo-name (repo-name application environment)
+          options {:force true}
+          response (data/edit-reference organisation repo-name "heads/master" commit options)]
+      (if (busted? response)
+        (do
+          (with-logging-context {:response response}
+            (warn "Failed to update reference" repo-name))
+          (throw+ {:status 500
+                   :message (format "Failed to update reference %s" repo-name)}))
+        response))
+    (catch Exception e
+      (with-logging-context {:application application
+                             :environment environment
+                             :commit commit}
+        (error e "Failed to update reference"))
+      (throw+ {:status 500
+               :message "Failed to update reference"}))))
+
+(defn- update-repos
+  []
+  (reset! repos-atom (all-repositories)))
+
+(defn- kick-off-repo-update
+  []
+  (.start (Thread. update-repos)))
 
 (defn create-application-env
-  [application environment]
-  (let [repo-name (repo-name application environment)]
-    (create-repository application environment)
-    (git/clone-repo repo-name)
-    (write-default-properties application environment)
-    (git/commit-and-push repo-name "Initial properties files.")
-    {:name repo-name :path (git/repo-url repo-name)}))
+  [application environment update?]
+  (let [repo (create-repository application environment)
+        ssh-url (:ssh_url repo)]
+    (when update?
+      (kick-off-repo-update))
+    (let [tree (create-tree application environment)
+          tree-sha (:sha tree)
+          commit (create-commit application environment tree-sha)
+          commit-sha (:sha commit)]
+      (update-ref application environment commit-sha)
+      {:name (repo-name application environment) :path ssh-url})))
 
 (defn create-application
   [application]
   (let [default-environments (environments/default-environments)
-        repos (map (fn [[k _]] (create-application-env application (name k))) default-environments)]
+        repos (map (fn [[k _]] (create-application-env application (name k) false)) default-environments)]
+    (kick-off-repo-update)
     {:repositories repos}))
 
-(defn write-properties-file
-  "Writes the given properties to the appropriate local Git file."
-  [app-name env category props]
-  (let [dest-path (dest-path app-name env category)]
-    (spit dest-path (json/generate-string props {:pretty true}))))
-
-(defn update-properties
-  "Adds or updates the given properties in the given app, env and category."
-  [app-name env category tokens]
-  (let [orig (get-data env app-name "head" category)
-        updated (into (sorted-map) (merge (:data orig) tokens))]
-    (write-properties-file app-name env category updated)
-    (git/commit-and-push (repo-name app-name env) "Updated properties")
-    (get-data env app-name "head" category)))
-
-(defn update-git-health
+(defn update-github-health
   []
-  (reset! git-health-atom (git-connection-working?)))
+  (reset! github-health-atom (github-working?)))
 
-(defn git-healthy?
+(defn github-healthy?
   []
-  @git-health-atom)
+  @github-health-atom)
+
+(defn repos-healthy?
+  []
+  (some? @repos-atom))
+
+(defn- setup-tentacles
+  []
+  (intern 'tentacles.core 'url (env :github-base-url) )
+  (intern 'tentacles.core 'defaults {:oauth-token (env :github-auth-token)}))
 
 (defn create-pool
   []
   (when-not @pool
-    (reset! pool (at/mk-pool :cpu-count 1))))
+    (reset! pool (at/mk-pool :cpu-count 2))))
 
 (defn init
   []
+  (setup-tentacles)
   (create-pool)
-  (at/interspaced (* 1000 12) update-git-health @pool :initial-delay 0))
+  (at/every (* 1000 12) update-github-health @pool :initial-delay 0)
+  (at/every (* 1000 60 5) update-repos @pool :initial-delay 0))

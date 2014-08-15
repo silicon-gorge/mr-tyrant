@@ -34,6 +34,10 @@
     (catch Exception e
       (warn e "Failed to update environments"))))
 
+(defn environments-healthy?
+  []
+  (some? (environments)))
+
 (defn init
   []
   (create-pool)

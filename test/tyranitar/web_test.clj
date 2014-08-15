@@ -6,8 +6,7 @@
             [tyranitar
              [environments :as environments]
              [store :as store]
-             [web :refer :all]])
-  (:import [org.eclipse.jgit.api.errors GitAPIException InvalidRemoteException]))
+             [web :refer :all]]))
 
 (defn- json-body
   [raw-body]
@@ -73,8 +72,9 @@
 (fact "that status returns ok"
       (request :get "/1.x/status") => (contains {:status 200})
       (provided
-       (store/git-healthy?) => true
-       (environments/environments) => {}))
+       (environments/environments) => {}
+       (store/github-healthy?) => true
+       (store/repos-healthy?) => true))
 
 (fact "that an unknown environment name results in not found response"
       (request :get "/1.x/applications/unknown") => (contains {:status 404}))
@@ -105,13 +105,13 @@
       (request :post "/1.x/applications/dev/test") => (contains {:status 201})
       (provided
        (environments/environments) => {:dev {}}
-       (store/create-application-env "test" "dev") => {}))
+       (store/create-application-env "test" "dev" true) => {}))
 
 (fact "that a 422 error while creating an application in a specific environment is a 409"
       (request :post "/1.x/applications/dev/test") => (contains {:status 409})
       (provided
        (environments/environments) => {:dev {}}
-       (store/create-application-env "test" "dev") =throws=> (slingshot-exception {:status 422})))
+       (store/create-application-env "test" "dev" true) =throws=> (slingshot-exception {:status 422})))
 
 (fact "that getting commits for application that doesn't exist results in not found response"
       (request :get "/1.x/applications/prod/test") => (contains {:status 404})
@@ -163,23 +163,6 @@
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "launch-data") => []))
 
-(fact "that updating properties is called with the correct params"
-      (request :post "/1.x/applications/dev/testapp/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 200})
-      (provided
-       (environments/environments) => {:dev {}}
-       (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"}) => {:dummy "value"}))
-
-(fact "that a Git failure returns correct error response"
-      (request :post "/1.x/applications/dev/testapp/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 409})
-      (provided
-       (environments/environments) => {:dev {}}
-       (store/update-properties "testapp" "dev" "application-properties" {:a "one" :b "two"}) =throws=> (InvalidRemoteException. "GIT update failed!")))
-
-(fact "that updating properties for an unknown environment is a 404"
-      (request :post "/1.x/applications/prod/app/application-properties" (json-body {:a "one" :b "two"})) => (contains {:status 404})
-      (provided
-       (environments/environments) => {}))
-
 (fact "that our pokémon resource works"
       (request :get "/1.x/pokemon") => (contains {:status 200}))
 
@@ -189,17 +172,27 @@
 (fact "that our healthcheck gives a 200 response if everything is healthy"
       (request :get "/healthcheck") => (contains {:status 200})
       (provided
-       (store/git-healthy?) => true
-       (environments/environments) => {}))
+       (environments/environments) => {}
+       (store/github-healthy?) => true
+       (store/repos-healthy?) => true))
 
 (fact "that our healthcheck gives a 500 response if Git isn't healthy"
       (request :get "/healthcheck") => (contains {:status 500})
       (provided
-       (store/git-healthy?) => false
-       (environments/environments) => {}))
+       (environments/environments) => {}
+       (store/github-healthy?) => false
+       (store/repos-healthy?) => true))
 
 (fact "that our healthcheck gives a 500 response if our environments haven't loaded"
       (request :get "/healthcheck") => (contains {:status 500})
       (provided
-       (store/git-healthy?) => true
-       (environments/environments) => nil))
+       (environments/environments) => nil
+       (store/github-healthy?) => true
+       (store/repos-healthy?) => true))
+
+(fact "that our healthcheck gives a 500 response if our repos haven't loaded"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (environments/environments) => {}
+       (store/github-healthy?) => true
+       (store/repos-healthy?) => false))

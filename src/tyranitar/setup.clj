@@ -1,19 +1,18 @@
 (ns tyranitar.setup
-    (:require [clojure.java.io :as io]
-              [clojure.tools.logging :refer (info warn error)]
-              [environ.core :refer [env]]
-              [nokia.adapter.instrumented-jetty :refer [run-jetty]]
-              [tyranitar
-               [environments :as environments]
-               [store :as store]
-               [web :as web]])
-    (:import (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
-             (com.ovi.common.metrics HostnameFactory)
-             (java.lang Integer Throwable)
-             (java.util.concurrent TimeUnit)
-             (java.util.logging LogManager)
-             (org.slf4j.bridge SLF4JBridgeHandler))
-    (:gen-class))
+  (:require [clojure.java.io :as io]
+            [clojure.tools.logging :refer (info warn error)]
+            [environ.core :refer [env]]
+            [nokia.adapter.instrumented-jetty :refer [run-jetty]]
+            [tyranitar
+             [environments :as environments]
+             [store :as store]
+             [web :as web]])
+  (:import (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
+           (com.ovi.common.metrics HostnameFactory)
+           (java.util.concurrent TimeUnit)
+           (java.util.logging LogManager)
+           (org.slf4j.bridge SLF4JBridgeHandler))
+  (:gen-class))
 
 (defn read-file-to-properties
   [file-name]
@@ -36,9 +35,9 @@
                                           (HostnameFactory/getHostname)]))]
     (GraphiteReporterFactory/create
      (env :environment-entertainment-graphite-host)
-     (Integer/parseInt (env :environment-entertainment-graphite-port))
+     (Integer/valueOf (env :environment-entertainment-graphite-port))
      graphite-prefix
-     (Integer/parseInt (env :service-graphite-post-interval))
+     (Integer/valueOf (env :service-graphite-post-interval))
      (TimeUnit/valueOf (env :service-graphite-post-unit))
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
@@ -60,20 +59,25 @@
 
 (defn start-server
   []
-  (run-jetty #'web/app {:port (Integer. (env :service-port))
+  (run-jetty #'web/app {:port (Integer/valueOf (env :service-port))
                         :join? false
                         :stacktraces? (not (Boolean/valueOf (env :service-production)))
                         :auto-reload? (not (Boolean/valueOf (env :service-production)))}))
 
 (defn start
   []
+  (info "Starting")
   (setup)
   (reset! server (start-server)))
 
 (defn stop
   []
-  (if-let [server @server] (.stop server)))
+  (info "Stopping")
+  (when-let [server @server]
+    (.stop server))
+  (shutdown-agents))
 
 (defn -main
   [& args]
+  (.addShutdownHook (Runtime/getRuntime) (Thread. stop))
   (start))

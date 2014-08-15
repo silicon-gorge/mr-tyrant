@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  
-  <!-- Properties should be provided as environment variables or the defaults will be used -->
+
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>${SERVICE_LOGGING_FILETHRESHOLD:-info}</level>
@@ -11,7 +10,7 @@
       <fileNamePattern>${SERVICE_LOGGING_PATH:-/tmp}/tyranitar.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
     </rollingPolicy>
     <encoder>
-      <pattern>%d{dd/MM/yyyy HH:mm:ss.SSS} [%thread] %-5level %X{logItemId} %logger{36} - %msg%n %X{stack}</pattern>
+      <pattern>%d [%thread] %-5level %X{logItemId} %logger{36} - %msg%n%ex</pattern>
     </encoder>
   </appender>
 
@@ -38,8 +37,9 @@
       <appender-ref ref="file" />
     </logger>
 
-    <root level="all">
+    <root level="${SERVICE_LOGGING_LEVEL:info}">
         <appender-ref ref="file"/>
         <appender-ref ref="service" />
     </root>
+
 </configuration>

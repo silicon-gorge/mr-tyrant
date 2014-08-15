@@ -20,10 +20,8 @@
             [slingshot.slingshot :refer [try+]]
             [tyranitar
              [environments :as environments]
-             [git :as git]
              [pokemon :as pokemon]
-             [store :as store]])
-  (:import [org.eclipse.jgit.api.errors GitAPIException]))
+             [store :as store]]))
 
 (def json-content-type "application/json;charset=utf-8")
 
@@ -31,7 +29,7 @@
 
 (def category-regex #"application-properties|deployment-params|launch-data")
 
-(def commit-regex #"HEAD~\d+|HEAD|head~\d+|head|[0-9a-fA-F]{40}")
+(def commit-regex #"HEAD~(?:\d+)?|HEAD|head~(?:\d+)?|head|[0-9a-fA-F]{40}")
 
 (def env-regex #"dev|poke|prod")
 
@@ -47,29 +45,31 @@
 
 (defn unknown-environment-response
   []
-  (response (str "Unknown environment") plain-text 404))
+  (response "Unknown environment" plain-text 404))
 
 (defn- healthcheck
   []
-  (let [git-ok? (store/git-healthy?)
-        environments-ok? (some? (environments/environments))]
+  (let [environments-ok? (environments/environments-healthy?)
+        github-ok? (store/github-healthy?)
+        repos-ok? (store/repos-healthy?)]
     {:name "tyranitar"
      :version *version*
-     :success (and git-ok? environments-ok?)
-     :dependencies [{:name "snc" :success git-ok?}
-                    {:name "environments" :success environments-ok?}]}))
+     :success (and environments-ok? github-ok? repos-ok?)
+     :dependencies [{:name "environments" :success environments-ok?}
+                    {:name "git" :success github-ok?}
+                    {:name "repos" :success repos-ok?}]}))
 
 (defn- get-data
-  [env app commit category]
-  (if-let [result (store/get-data env app commit category)]
+  [environment application commit category]
+  (if-let [result (store/get-data environment application commit category)]
     (response result)
-    (error-response (str "No data of type '" category "' for application '" app "' at revision '" commit "' - does it exist?") 404)))
+    (error-response (str "No data of type '" category "' for application '" application "' at revision '" commit "' - does it exist?") 404)))
 
 (defn- get-list
-  [env app]
-  (if-let [result (store/get-commits env app)]
-    (response result)
-    (error-response (str "Application '" app "' does not exist.") 404)))
+  [environment application]
+  (if-let [result (store/get-commits environment application)]
+    (response {:commits result})
+    (error-response (str "Application '" application "' does not exist.") 404)))
 
 (defn- create-application
   [name]
@@ -79,23 +79,11 @@
      (error-response (str "Could not create application '" name "', message: " (:message e)) 409))))
 
 (defn- create-application-env
-  [name env]
+  [name environment]
   (try+
-   (response (store/create-application-env name env) json-content-type 201)
+   (response (store/create-application-env name environment true) json-content-type 201)
    (catch [:status 422] e
-     (error-response (str "Could not create environment repo '" env "' for application '" name "', message: " (:message e)) 409))))
-
-(defn read-json-body
-  "Reads HTTP JSON input into a nice map."
-  [body]
-  (json/parse-string (slurp body) true))
-
-(defn update-properties
-  [app-name env category properties]
-  (try
-    (response (store/update-properties app-name env category (read-json-body properties)))
-    (catch GitAPIException e
-      (error-response (str "Unable to store update in Git, message: " (:message e)) 409))))
+     (error-response (str "Could not create environment repo '" environment "' for application '" name "', message: " (:message e)) 409))))
 
 (defn known-environment?
   [environment]
@@ -110,35 +98,29 @@
         [name]
         (create-application name))
 
-  (GET ["/:env"]
-       [env]
-       (if (known-environment? env)
-         (response {:applications (store/get-repository-list env)})
+  (GET ["/:environment"]
+       [environment]
+       (if (known-environment? environment)
+         (response {:applications (store/get-repository-list environment)})
          (unknown-environment-response)))
 
-  (GET ["/:env/:app"]
-       [env app]
-       (if (known-environment? env)
-         (get-list env app)
+  (GET ["/:environment/:application"]
+       [environment application]
+       (if (known-environment? environment)
+         (get-list environment application)
          (unknown-environment-response)))
 
-  (POST "/:env/:app"
-        [env app]
-        (if (known-environment? env)
-          (create-application-env app env)
+  (POST "/:environment/:application"
+        [environment application]
+        (if (known-environment? environment)
+          (create-application-env application environment)
           (unknown-environment-response)))
 
-  (GET ["/:env/:app/:commit/:category" :commit commit-regex :category category-regex]
-       [env app commit category]
-       (if (known-environment? env)
-         (get-data env app commit category)
-         (unknown-environment-response)))
-
-  (POST ["/:env/:app/:category" :category category-regex]
-        [env app category :as req]
-        (if (known-environment? env)
-          (update-properties app env category (:body req))
-          (unknown-environment-response))))
+  (GET ["/:environment/:application/:commit/:category" :commit commit-regex :category category-regex]
+       [environment application commit category]
+       (if (known-environment? environment)
+         (get-data environment application commit category)
+         (unknown-environment-response))))
 
 (defroutes routes
   (context
