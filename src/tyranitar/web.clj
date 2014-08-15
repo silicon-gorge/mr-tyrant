@@ -167,6 +167,10 @@
             []
             applications-routes))
 
+  (GET "/ping"
+       []
+       (response "pong" "text/plain" 200))
+
   (GET "/healthcheck"
        []
        (let [healthcheck-result (healthcheck)
