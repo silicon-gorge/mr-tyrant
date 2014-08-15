@@ -15,6 +15,7 @@
            [com.jcraft.jsch JSch]
            [java.io ByteArrayInputStream]))
 
+; You can `ssh-keygen -y -f tyranitar > tyranitar.pub` to get the public key`
 (def tyranitar-private-key
   "-----BEGIN RSA PRIVATE KEY-----
 MIIEoQIBAAKCAQEA0URSQjQT7uYXG42k3X9hvKPvD1SQQBRQImmoGRh2xBL8k7In
