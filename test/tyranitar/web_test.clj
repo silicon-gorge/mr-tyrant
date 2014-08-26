@@ -67,14 +67,7 @@
        (store/create-application "application") =throws=> (slingshot-exception {:status 422})))
 
 (fact "that ping returns a pong"
-      (request :get "/1.x/ping") => (contains {:body "pong"}))
-
-(fact "that status returns ok"
-      (request :get "/1.x/status") => (contains {:status 200})
-      (provided
-       (environments/environments) => {}
-       (store/github-healthy?) => true
-       (store/repos-healthy?) => true))
+      (request :get "/ping") => (contains {:body "pong"}))
 
 (fact "that an unknown environment name results in not found response"
       (request :get "/1.x/applications/unknown") => (contains {:status 404}))

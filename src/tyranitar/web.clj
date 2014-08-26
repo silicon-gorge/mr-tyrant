@@ -126,14 +126,6 @@
   (context
    "/1.x" []
 
-   (GET "/ping"
-        []
-        "pong")
-
-   (GET "/status"
-        []
-        (response (healthcheck) json-content-type 200))
-
    (GET "/pokemon"
         []
         (response pokemon/pokemon plain-text))
