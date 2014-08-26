@@ -55,8 +55,8 @@
         :service-logging-level "info"
         :service-logging-path "/tmp"
         :service-logging-servicethreshold "off"
-        :service-onix-url "http://onix"
         :service-name "tyranitar"
+        :service-onix-url "http://onix"
         :service-port "8080"
         :service-production "false"}
 
