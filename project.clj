@@ -27,7 +27,7 @@
                  [org.slf4j/slf4j-api "1.7.7"]
                  [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.4.0"]
-                 [tentacles "0.2.8-SNAPSHOT"]]
+                 [tentacles.custom "0.2.8"]]
 
   :exclusions [commons-logging
                log4j]
