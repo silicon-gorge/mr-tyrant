@@ -174,18 +174,12 @@
     (catch Exception e
       false)))
 
-(defn- render-and-format
-  [resource data]
-  (-> (templates/render-resource resource data)
-      json/parse-string
-      (json/generate-string {:pretty true})))
-
 (defn- properties-tree
   [application environment]
   (let [data (if (= "prod" environment) (prod-properties application environment) (poke-properties application environment))
-        application-properties (render-and-format "application-properties.json" data)
-        deployment-params (render-and-format "deployment-params.json" data)
-        launch-data (render-and-format "launch-data.json" data)]
+        application-properties (templates/render-resource "application-properties.json" data)
+        deployment-params (templates/render-resource "deployment-params.json" data)
+        launch-data (templates/render-resource "launch-data.json" data)]
     [{:content application-properties
       :mode "100644"
       :path "application-properties.json"
