@@ -37,7 +37,6 @@
   [application environment]
   {:app-name application
    :env-name environment
-   :error-logging-url "http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x"
    :instance-type "m1.small"
    :graphite-host "carbon.brislabs.com"
    :is-prod false
@@ -49,7 +48,6 @@
   [application environment]
   {:app-name application
    :env-name environment
-   :error-logging-url "http://errorlogging.ent.nokia.com:8080/ErrorLogging/1.x"
    :instance-type "m1.small"
    :graphite-host "carbon.ent.nokia.com"
    :is-prod true

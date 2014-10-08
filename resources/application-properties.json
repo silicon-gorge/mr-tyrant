@@ -1,12 +1,11 @@
 {
   "environment.name" : "{{env-name}}",
-  "environment.music.errorLogging1Java.baseUrl": "{{error-logging-url}}",
   "service.name" : "{{app-name}}",
   "service.port" : 8080,
-  "environment.entertainment.graphite.host" : "{{graphite-host}}",
-  "environment.entertainment.graphite.port" : 2003,
-  "service.graphite.post.interval" : 1,
-  "service.graphite.post.unit" : "MINUTES",
-  "service.graphite.enabled" : "ENABLED",
-  "service.production" : {{is-prod}}
+  "graphite.host" : "{{graphite-host}}",
+  "graphite.port" : 2003,
+  "graphite.post.interval" : 1,
+  "graphite.post.unit" : "MINUTES",
+  "graphite.enabled" : "ENABLED",
+  "production" : {{is-prod}}
 }
