@@ -1,19 +1,19 @@
 /bin/echo "postinstall script started [$1]"
 
+APP_NAME=tyranitar
+
 if [ "$1" -le 1 ]
 then
-  /sbin/chkconfig --add tyranitar
+  /sbin/chkconfig --add $APP_NAME
 else
-  /sbin/chkconfig --list tyranitar
+  /sbin/chkconfig --list $APP_NAME
 fi
 
-mkdir -p /var/log/tyranitar
+ln -s /var/encrypted/logs/$APP_NAME /var/log/$APP_NAME
 
-chown -R tyranitar:tyranitar /var/log/tyranitar
+chown -R $APP_NAME:$APP_NAME /usr/local/$APP_NAME
 
-ln -s /var/log/tyranitar /usr/local/tyranitar/log
-
-chown tyranitar:tyranitar /usr/local/tyranitar
+chmod 755 /usr/local/$APP_NAME/bin
 
 /bin/echo "postinstall script finished"
 exit 0

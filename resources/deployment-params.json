@@ -2,8 +2,8 @@
   "healthCheckType" : "EC2",
   "instanceType" : "{{instance-type}}",
   "selectedSecurityGroups" : [
-  "{{web-security-group}}",
-  {{#scanner-security-group-present}}"{{scanner-security-group}}",{{/scanner-security-group-present}}
-  "{{ssh-security-group}}"
+    "{{web-security-group}}",
+    {{#scanner-security-group-present}}"{{scanner-security-group}}",{{/scanner-security-group-present}}
+    "{{ssh-security-group}}"
   ]
 }

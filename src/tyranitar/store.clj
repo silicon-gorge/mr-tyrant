@@ -304,7 +304,7 @@
 
 (defn- setup-tentacles
   []
-  (intern 'tentacles.core 'url (env :github-base-url) )
+  (intern 'tentacles.core 'url (env :github-baseurl) )
   (intern 'tentacles.core 'defaults {:oauth-token (env :github-auth-token)}))
 
 (defn create-pool

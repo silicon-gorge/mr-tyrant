@@ -1,22 +1,20 @@
 #!/bin/sh
 
-SERVICE_NAME=tyranitar
+APP_NAME=tyranitar
 
-PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
-  echo "Jetty is already running in process $PIDS";
+  echo "Tyranitar is already running in process $PIDS";
   exit 1
 fi
 
-JETTY_HOME=/usr/local/tyranitar
-JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
-LOG_FILE=$JETTY_HOME/log/jetty.log
-ERR_FILE=$JETTY_HOME/log/jetty.err
+JETTY_HOME=/usr/local/$APP_NAME
+JAR_NAME=$JETTY_HOME/$APP_NAME.jar
 
 IFS="$(echo -e "\n\r")"
-for LINE in `cat /etc/${SERVICE_NAME}.properties`
+for LINE in `cat /etc/${APP_NAME}.properties`
 do
   case $LINE in
     \#*) ;;
@@ -31,17 +29,22 @@ done
 IFS="$(echo -e " ")"
 
 SERVICE_PORT=${SERVICE_PORT:-"8080"}
-STATUS_PATH=${SERVICE_STATUS_PATH:-"/healthcheck"}
-SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"60"}
+HEALTHCHECK_PATH=${HEALTHCHECK_PATH:-"/healthcheck"}
+START_TIMEOUT_SECONDS=${START_TIMEOUT_SECONDS:-"60"}
+LOGGING_PATH=${LOGGING_PATH:-"/var/log/${SERVICE_NAME}"}
+LOG_FILE=${LOGGING_PATH}/tyranitar.out
+ERR_FILE=${LOGGING_PATH}/tyranitar.err
 
-nohup java $SERVICE_JVMARGS -Dservice.logging.path=${SERVICE_LOGGING_PATH} -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
+mkdir -p /var/encrypted/logs/${APP_NAME}
 
-statusUrl=http://localhost:$SERVICE_PORT$STATUS_PATH
-waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
+nohup java $SERVICE_JVMARGS -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
+
+statusUrl=http://localhost:$SERVICE_PORT$HEALTHCHECK_PATH
+waitTimeout=$START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
 
-echo "Giving Jetty $waitTimeout seconds to start successfully"
+echo "Giving Tyranitar $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
@@ -50,8 +53,8 @@ until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
-    echo "Jetty didn't start within $waitTimeout seconds."
-    PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
+    echo "Tyranitar didn't start within $waitTimeout seconds."
+    PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
 	  echo "Killing $PIDS";
@@ -77,9 +80,9 @@ cat $ERR_FILE 1>&2
 
 if [ $retVal -eq 1 ]
 then
-  echo "Starting Jetty failed"
+  echo "Starting Tyranitar failed"
 else
-  echo "Starting Jetty succeeded"
+  echo "Starting Tyranitar succeeded"
 fi
 
 exit $retVal

@@ -42,12 +42,6 @@
   [exception-map]
   (s/get-throwable (s/make-context exception-map (str "throw+: " map) (s/stack-trace) {})))
 
-(fact "that we can set the version"
-      (set-version! "0.1") => anything
-      *version* => "0.1"
-      (set-version! "something") => anything
-      *version* => "something")
-
 (fact "that we can retrieve the applications list"
       (request :get "/1.x/applications") => (contains {:body {:applications [{:something "hello"}]}})
       (provided

@@ -11,7 +11,7 @@
   5000)
 
 (def onix-url
-  (url (env :service-onix-url)))
+  (url (env :onix-baseurl)))
 
 (defn environments-url
   []

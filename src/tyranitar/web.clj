@@ -10,9 +10,11 @@
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
-            [nokia.ring-utils
+            [radix
              [error :refer [wrap-error-handling error-response]]
-             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
+             [setup :as setup]
+             [reload :refer [wrap-reload]]]
             [ring.middleware
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
@@ -33,9 +35,8 @@
 
 (def env-regex #"dev|poke|prod")
 
-(def ^:dynamic *version* "none")
-(defn set-version! [version]
-  (alter-var-root #'*version* (fn [_] version)))
+(def version
+  (setup/version "tyranitar"))
 
 (defn response
   [data & [content-type status]]
@@ -53,7 +54,7 @@
         github-ok? (store/github-healthy?)
         repos-ok? (store/repos-healthy?)]
     {:name "tyranitar"
-     :version *version*
+     :version version
      :success (and environments-ok? github-ok? repos-ok?)
      :dependencies [{:name "environments" :success environments-ok?}
                     {:name "git" :success github-ok?}
@@ -155,6 +156,7 @@
 
 (def app
   (-> routes
+      (wrap-reload)
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
