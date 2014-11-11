@@ -15,11 +15,11 @@
 
 (defn environments-url
   []
-  (str (url onix-url "1.x" "environments")))
+  (str (url onix-url "environments")))
 
 (defn environment-url
   [environment]
-  (str (url onix-url "1.x" "environments" environment)))
+  (str (url onix-url "environments" environment)))
 
 (defn environments
   []
