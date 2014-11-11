@@ -1,6 +1,8 @@
 (ns tyranitar.store
   (:require [cheshire.core :as json]
-            [clj-time.core :as time]
+            [clj-time
+             [core :as time]
+             [format :as fmt]]
             [clojure.java.io :refer [as-file]]
             [clojure.string :as str]
             [clojure.tools.logging :refer [debug error warn]]
@@ -222,7 +224,7 @@
   [application environment tree]
   (try
     (let [repo-name (repo-name application environment)
-          date (str (time/now))
+          date (fmt/unparse (fmt/formatters :date-time-no-ms) (time/now))
           info {:date date :email "mixradiobot@gmail.com" :name "Mix Radio Bot"}
           options {:author info :committer info :parents []}
           response (data/create-commit organisation repo-name "Initial commit" tree options)]
