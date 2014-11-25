@@ -1,25 +1,15 @@
 (ns tyranitar.environments-test
   (:require [midje.sweet :refer :all]
-            [overtone.at-at :as at]
             [tyranitar
              [environments :refer :all]
              [onix :as onix]]))
 
-(fact "that getting nil back when updating environments does not replace the value"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => nil
-      (provided
-       (onix/environments) => nil))
-
-(fact "that an exception while getting environments does not replace the value"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => nil
-      (provided
-       (onix/environments) =throws=> (ex-info "Busted" {})))
-
-(fact "that updating our environments does what we expect"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => {:env1 {:name "env1"
-                                                                                          :metadata {:first "metadata"}}
-                                                                                   :env2 {:name "env2"
-                                                                                          :metadata {:second "metadata"}}}
+(fact "that loading our environments does what we expect"
+      (load-environments)
+      => {:env1 {:name "env1"
+                 :metadata {:first "metadata"}}
+          :env2 {:name "env2"
+                 :metadata {:second "metadata"}}}
       (provided
        (onix/environments) => ["env1" "env2"]
        (onix/environment "env1") => {:name "env1" :metadata {:first "metadata"}}

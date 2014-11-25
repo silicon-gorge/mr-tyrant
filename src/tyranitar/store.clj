@@ -9,21 +9,12 @@
             [clostache.parser :as templates]
             [environ.core :refer [env]]
             [io.clj.logging :refer [with-logging-context]]
-            [overtone.at-at :as at]
+            [ninjakoala.ttlr :as ttlr]
             [slingshot.slingshot :refer [throw+]]
             [tentacles
              [data :as data]
              [repos :as repos]]
             [tyranitar.environments :as environments]))
-
-(def ^:private pool
-  (atom nil))
-
-(def ^:private github-health-atom
-  (atom false))
-
-(def ^:private repos-atom
-  (atom nil))
 
 (def ^:private organisation
   (env :github-organisation))
@@ -143,8 +134,8 @@
 
 (defn get-repository-list
   "Returns a list of all repositories that exist in the organisation in Github."
-  ([] (process-repositories @repos-atom))
-  ([environment] (process-repositories (filter #(= (name environment) (:environment %)) @repos-atom))))
+  ([] (process-repositories (ttlr/state :repositories)))
+  ([environment] (process-repositories (filter #(= (name environment) (:environment %)) (ttlr/state :repositories)))))
 
 (defn- create-repository
   [application environment]
@@ -264,20 +255,12 @@
       (throw+ {:status 500
                :message "Failed to update reference"}))))
 
-(defn- update-repos
-  []
-  (reset! repos-atom (all-repositories)))
-
-(defn- kick-off-repo-update
-  []
-  (.start (Thread. update-repos)))
-
 (defn create-application-env
   [application environment update?]
   (let [repo (create-repository application environment)
         ssh-url (:ssh_url repo)]
     (when update?
-      (kick-off-repo-update))
+      (.start (Thread. (ttlr/refresh :repositories))))
     (let [tree (create-tree application environment)
           tree-sha (:sha tree)
           commit (create-commit application environment tree-sha)
@@ -289,34 +272,24 @@
   [application]
   (let [default-environments (environments/default-environments)
         repos (map (fn [[k _]] (create-application-env application (name k) false)) default-environments)]
-    (kick-off-repo-update)
+    (.start (Thread. (ttlr/refresh :repositories)))
     {:repositories repos}))
-
-(defn update-github-health
-  []
-  (reset! github-health-atom (github-working?)))
 
 (defn github-healthy?
   []
-  @github-health-atom)
+  (ttlr/state :github-healthy?))
 
 (defn repos-healthy?
   []
-  (some? @repos-atom))
+  (some? (ttlr/state :repositories)))
 
 (defn- setup-tentacles
   []
   (intern 'tentacles.core 'url (env :github-baseurl) )
   (intern 'tentacles.core 'defaults {:oauth-token (env :github-auth-token)}))
 
-(defn create-pool
-  []
-  (when-not @pool
-    (reset! pool (at/mk-pool :cpu-count 2))))
-
 (defn init
   []
   (setup-tentacles)
-  (create-pool)
-  (at/every (* 1000 12) update-github-health @pool :initial-delay 0)
-  (at/every (* 1000 60 5) update-repos @pool :initial-delay 0))
+  (ttlr/schedule :github-healthy? github-working? (* 1000 12) (github-working?))
+  (ttlr/schedule :repositories all-repositories (* 1000 60 5) (all-repositories)))

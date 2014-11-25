@@ -7,6 +7,7 @@
                  [clj-http "1.0.0"]
                  [clj-time "0.8.0"]
                  [com.cemerick/url "0.1.1"]
+                 [com.ninjakoala/ttlr "1.0.1"]
                  [compojure "1.2.0"]
                  [de.ubercode.clostache/clostache "1.4.0"]
                  [environ "1.0.0"]
@@ -18,7 +19,6 @@
                  [net.logstash.logback/logstash-logback-encoder "3.2"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.4.0"]
                  [tentacles.custom "0.2.8"]]
 

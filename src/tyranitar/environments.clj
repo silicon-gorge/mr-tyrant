@@ -1,22 +1,11 @@
 (ns tyranitar.environments
   (:require [clojure.tools.logging :refer [warn]]
-            [overtone.at-at :as at]
+            [ninjakoala.ttlr :as ttlr]
             [tyranitar.onix :as onix]))
-
-(def ^:private pool
-  (atom nil))
-
-(def environments-atom
-  (atom nil))
-
-(defn create-pool
-  []
-  (when-not @pool
-    (reset! pool (at/mk-pool :cpu-count 1))))
 
 (defn environments
   []
-  @environments-atom)
+  (ttlr/state :environments))
 
 (defn map-by-name-kw
   [list]
@@ -26,13 +15,9 @@
   []
   (map-by-name-kw (filter #(get-in % [:metadata :create-repo]) (vals (environments)))))
 
-(defn update-environments
+(defn load-environments
   []
-  (try
-    (when-let [environments (map-by-name-kw (map onix/environment (onix/environments)))]
-      (reset! environments-atom environments))
-    (catch Exception e
-      (warn e "Failed to update environments"))))
+  (map-by-name-kw (map onix/environment (onix/environments))))
 
 (defn environments-healthy?
   []
@@ -40,5 +25,4 @@
 
 (defn init
   []
-  (create-pool)
-  (at/interspaced (* 1000 60 30) update-environments @pool :initial-delay 0))
+  (ttlr/schedule :environments load-environments (* 1000 60 20) (load-environments)))

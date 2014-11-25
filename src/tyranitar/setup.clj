@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [environ.core :refer [env]]
             [mixradio.instrumented-jetty :refer [run-jetty]]
+            [ninjakoala.ttlr :as ttlr]
             [tyranitar
              [environments :as environments]
              [store :as store]
@@ -32,6 +33,7 @@
   []
   (setup/configure-logging)
   (setup/start-graphite-reporting {:graphite-prefix (str/join "." [(env :environment-name) (env :service-name) (env :box-id setup/hostname)])})
+  (ttlr/init :cpu-count 1)
   (environments/init)
   (store/init)
   (reset! server (start-server)))
