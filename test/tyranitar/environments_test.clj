@@ -26,11 +26,11 @@
        (onix/environment "env2") => {:name "env2" :metadata {:second "metadata"}}))
 
 (fact "that getting default environments works"
-      (default-environments) => {:env1 {:name "env1" :metadata {:account "onething"
+      (default-environments) => {:env1 {:name "env1" :metadata {:account-id "onething"
                                                                 :create-repo true}}}
       (provided
        (environments) => {:env1 {:name "env1"
-                                 :metadata {:account "onething"
+                                 :metadata {:account-id "onething"
                                             :create-repo true}}
                           :env2 {:name "env2"
-                                 :metadata {:account "another"}}}))
+                                 :metadata {:account-id "another"}}}))
