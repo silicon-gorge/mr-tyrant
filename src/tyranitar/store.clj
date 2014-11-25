@@ -260,7 +260,7 @@
   (let [repo (create-repository application environment)
         ssh-url (:ssh_url repo)]
     (when update?
-      (.start (Thread. (ttlr/refresh :repositories))))
+      (future (ttlr/refresh :repositories)))
     (let [tree (create-tree application environment)
           tree-sha (:sha tree)
           commit (create-commit application environment tree-sha)
@@ -272,7 +272,7 @@
   [application]
   (let [default-environments (environments/default-environments)
         repos (map (fn [[k _]] (create-application-env application (name k) false)) default-environments)]
-    (.start (Thread. (ttlr/refresh :repositories)))
+    (future (ttlr/refresh :repositories))
     {:repositories repos}))
 
 (defn github-healthy?

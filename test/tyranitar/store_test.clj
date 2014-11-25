@@ -10,4 +10,5 @@
        (environments/default-environments) => {:env1 {:name "env1"}
                                                :env2 {:name "env2"}}
        (create-application-env "application" "env1" false) => "repoenv1"
-       (create-application-env "application" "env2" false) => "repoenv2"))
+       (create-application-env "application" "env2" false) => "repoenv2"
+       (all-repositories) => [] :times :any))
