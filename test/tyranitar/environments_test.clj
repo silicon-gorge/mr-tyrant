@@ -27,10 +27,10 @@
 
 (fact "that getting default environments works"
       (default-environments) => {:env1 {:name "env1" :metadata {:account "onething"
-                                                                :createRepo true}}}
+                                                                :create-repo true}}}
       (provided
        (environments) => {:env1 {:name "env1"
                                  :metadata {:account "onething"
-                                            :createRepo true}}
+                                            :create-repo true}}
                           :env2 {:name "env2"
                                  :metadata {:account "another"}}}))

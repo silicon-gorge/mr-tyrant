@@ -24,7 +24,7 @@
 
 (defn default-environments
   []
-  (map-by-name-kw (filter #(get-in % [:metadata :createRepo]) (vals (environments)))))
+  (map-by-name-kw (filter #(get-in % [:metadata :create-repo]) (vals (environments)))))
 
 (defn update-environments
   []
