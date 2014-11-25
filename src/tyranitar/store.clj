@@ -6,6 +6,7 @@
             [clojure.java.io :refer [as-file]]
             [clojure.string :as str]
             [clojure.tools.logging :refer [debug error warn]]
+            [clojure.walk :refer [postwalk]]
             [clostache.parser :as templates]
             [environ.core :refer [env]]
             [io.clj.logging :refer [with-logging-context]]
@@ -24,30 +25,6 @@
   (if-let [status (:status response)]
     (or (< status 200) (>= status 400))
     false))
-
-(defn- poke-properties
-  "Default properties for poke environment"
-  [application environment]
-  {:app-name application
-   :env-name environment
-   :instance-type "m1.small"
-   :graphite-host "carbon.brislabs.com"
-   :is-prod false
-   :ssh-security-group "Brislabs-SSH"
-   :web-security-group "Brislabs-8080"})
-
-(defn- prod-properties
-  "Default properties for prod environment"
-  [application environment]
-  {:app-name application
-   :env-name environment
-   :instance-type "m1.small"
-   :graphite-host "carbon.ent.nokia.com"
-   :is-prod true
-   :ssh-security-group "AppGate"
-   :web-security-group "internal-8080"
-   :scanner-security-group "ICM Scanning"
-   :scanner-security-group-present true})
 
 (defn- repo-name
   [application environment]
@@ -165,18 +142,25 @@
     (catch Exception e
       false)))
 
+(defn- order-keys
+  [m]
+  (postwalk (fn [x] (if (map? x) (into (sorted-map) x) x)) m))
+
 (defn- render-and-format
-  [resource data]
-  (-> (templates/render-resource resource data)
-      json/parse-string
-      (json/generate-string {:pretty true})))
+  [data template-props]
+  (let [data (if (map? data) (into (sorted-map) data) data)]
+    (-> (templates/render (json/generate-string data) template-props)
+        json/parse-string
+        order-keys
+        (json/generate-string {:pretty true}))))
 
 (defn- properties-tree
-  [application environment]
-  (let [data (if (= "prod" environment) (prod-properties application environment) (poke-properties application environment))
-        application-properties (render-and-format "application-properties.json" data)
-        deployment-params (render-and-format "deployment-params.json" data)
-        launch-data (render-and-format "launch-data.json" data)]
+  [application environment-name]
+  (let [environment (get (environments/environments) (keyword environment-name))
+        props {:app-name application :env-name environment-name}
+        application-properties (render-and-format (get-in environment [:metadata :default-application-properties] {}) props)
+        deployment-params (render-and-format (get-in environment [:metadata :default-deployment-params] {}) props)
+        launch-data (render-and-format (get-in environment [:metadata :default-launch-data] []) props)]
     [{:content application-properties
       :mode "100644"
       :path "application-properties.json"

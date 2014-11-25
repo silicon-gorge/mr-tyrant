@@ -1,7 +1,0 @@
-[
-  "cat > /etc/beaver/conf.d/{{app-name}}.conf <<EOF
-[/var/log/{{app-name}}/{{app-name}}-stash.log]
-type: timburr-log
-add_field_env: application,CLOUD_APP,environment,CLOUD_STACK,numel_id,NUMEL_ID
-EOF"
-]
