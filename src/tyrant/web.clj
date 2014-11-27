@@ -130,6 +130,10 @@
             []
             applications-routes))
 
+  (context "/applications"
+           []
+           applications-routes)
+
   (GET "/ping"
        []
        (response "pong" "text/plain" 200))

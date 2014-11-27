@@ -43,12 +43,12 @@
   (s/get-throwable (s/make-context exception-map (str "throw+: " map) (s/stack-trace) {})))
 
 (fact "that we can retrieve the applications list"
-      (request :get "/1.x/applications") => (contains {:body {:applications [{:something "hello"}]}})
+      (request :get "/applications") => (contains {:body {:applications [{:something "hello"}]}})
       (provided
        (store/get-repository-list) => [{:something "hello"}]))
 
 (fact "that creating an application passes the name down to store"
-      (request :post "/1.x/applications" (json-body {:name "application"})) => (contains {:body {:repositories [{:repo 1}
+      (request :post "/applications" (json-body {:name "application"})) => (contains {:body {:repositories [{:repo 1}
                                                                                                                 {:repo 2}]}
                                                                                           :status 201})
       (provided
@@ -56,7 +56,7 @@
                                                                    {:repo 2}]}))
 
 (fact "that a 422 error while creating an application is a 409"
-      (request :post "/1.x/applications" (json-body {:name "application"})) => (contains {:status 409})
+      (request :post "/applications" (json-body {:name "application"})) => (contains {:status 409})
       (provided
        (store/create-application "application") =throws=> (slingshot-exception {:status 422})))
 
@@ -64,88 +64,88 @@
       (request :get "/ping") => (contains {:body "pong"}))
 
 (fact "that an unknown environment name results in not found response"
-      (request :get "/1.x/applications/unknown") => (contains {:status 404}))
+      (request :get "/applications/unknown") => (contains {:status 404}))
 
 (fact "that a known environment is accepted"
-      (request :get "/1.x/applications/poke") => (contains {:status 200})
+      (request :get "/applications/poke") => (contains {:status 200})
       (provided
        (environments/environments) => {:poke {}}
        (store/get-repository-list "poke") => {}))
 
 (fact "that getting commits for an application in a known environment works"
-      (request :get "/1.x/applications/dev/test") => (contains {:status 200})
+      (request :get "/applications/dev/test") => (contains {:status 200})
       (provided
        (environments/environments) => {:dev {}}
        (store/get-commits "dev" "test") => []))
 
 (fact "that getting commits for an application in an unknown environment is a 404"
-      (request :get "/1.x/applications/dev/test") => (contains {:status 404})
+      (request :get "/applications/dev/test") => (contains {:status 404})
       (provided
        (environments/environments) => {}))
 
 (fact "that creating a repo for an unknown environment is a 404"
-      (request :post "/1.x/applications/dev/test") => (contains {:status 404})
+      (request :post "/applications/dev/test") => (contains {:status 404})
       (provided
        (environments/environments) => {}))
 
 (fact "that creating a repo for a known environment works"
-      (request :post "/1.x/applications/dev/test") => (contains {:status 201})
+      (request :post "/applications/dev/test") => (contains {:status 201})
       (provided
        (environments/environments) => {:dev {}}
        (store/create-application-env "test" "dev" true) => {}))
 
 (fact "that a 422 error while creating an application in a specific environment is a 409"
-      (request :post "/1.x/applications/dev/test") => (contains {:status 409})
+      (request :post "/applications/dev/test") => (contains {:status 409})
       (provided
        (environments/environments) => {:dev {}}
        (store/create-application-env "test" "dev" true) =throws=> (slingshot-exception {:status 422})))
 
 (fact "that getting commits for application that doesn't exist results in not found response"
-      (request :get "/1.x/applications/prod/test") => (contains {:status 404})
+      (request :get "/applications/prod/test") => (contains {:status 404})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-commits "prod" "test") => nil))
 
 (fact "that getting a commit for an application in an unknown environment is a 404"
-      (request :get "/1.x/applications/prod/test/head/application-properties") => (contains {:status 404})
+      (request :get "/applications/prod/test/head/application-properties") => (contains {:status 404})
       (provided
        (environments/environments) => {}))
 
 (fact "that getting the head -n commit for application works"
-      (request :get "/1.x/applications/prod/test/head~2/application-properties") => (contains {:status 200})
+      (request :get "/applications/prod/test/head~2/application-properties") => (contains {:status 200})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head~2" "application-properties") => []))
 
 (fact "that getting the head commit for application works"
-      (request :get "/1.x/applications/prod/test/head/application-properties") => (contains {:status 200})
+      (request :get "/applications/prod/test/head/application-properties") => (contains {:status 200})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "application-properties") => []))
 
 (fact "that getting a specific commit for application works"
-      (request :get "/1.x/applications/prod/test/921f195c98570550e743911bc3f5aca260d73f6f/application-properties") => (contains {:status 200})
+      (request :get "/applications/prod/test/921f195c98570550e743911bc3f5aca260d73f6f/application-properties") => (contains {:status 200})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "921f195c98570550e743911bc3f5aca260d73f6f" "application-properties") => []))
 
 (fact "that getting a specific commit which doesn't exist results in a not found response"
-      (request :get "/1.x/applications/prod/application/HEAD/application-properties") => (contains {:status 404})
+      (request :get "/applications/prod/application/HEAD/application-properties") => (contains {:status 404})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "application" "HEAD" "application-properties") => nil))
 
 (fact "that getting an invalid commit value results in not found response"
-      (request :get "/1.x/applications/prod/test/badcommit/application-properties") => (contains {:status 404}))
+      (request :get "/applications/prod/test/badcommit/application-properties") => (contains {:status 404}))
 
 (fact "that getting deployment-params works"
-      (request :get "/1.x/applications/prod/test/head/deployment-params") => (contains {:status 200})
+      (request :get "/applications/prod/test/head/deployment-params") => (contains {:status 200})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "deployment-params") => []))
 
 (fact "that getting launch-data works"
-      (request :get "/1.x/applications/prod/test/head/launch-data") => (contains {:status 200})
+      (request :get "/applications/prod/test/head/launch-data") => (contains {:status 200})
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "launch-data") => []))
