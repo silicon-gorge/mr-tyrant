@@ -1,9 +1,9 @@
-(ns tyranitar.web-test
+(ns tyrant.web-test
   (:require [cheshire.core :as json]
             [midje.sweet :refer :all]
             [ring.util.io :refer [string-input-stream]]
             [slingshot.support :as s]
-            [tyranitar
+            [tyrant
              [environments :as environments]
              [store :as store]
              [web :refer :all]]))
@@ -149,12 +149,6 @@
       (provided
        (environments/environments) => {:prod {}}
        (store/get-data "prod" "test" "head" "launch-data") => []))
-
-(fact "that our pokémon resource works"
-      (request :get "/1.x/pokemon") => (contains {:status 200}))
-
-(fact "that our icon resource works"
-      (request :get "/1.x/icon") => (contains {:status 200}))
 
 (fact "that our healthcheck gives a 200 response if everything is healthy"
       (request :get "/healthcheck") => (contains {:status 200})

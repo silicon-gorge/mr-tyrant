@@ -1,4 +1,4 @@
-(ns tyranitar.store
+(ns tyrant.store
   (:require [cheshire.core :as json]
             [clj-time
              [core :as time]
@@ -15,7 +15,7 @@
             [tentacles
              [data :as data]
              [repos :as repos]]
-            [tyranitar.environments :as environments]))
+            [tyrant.environments :as environments]))
 
 (def ^:private organisation
   (env :github-organisation))
@@ -137,7 +137,7 @@
 (defn- github-working?
   []
   (try
-    (let [response (repos/specific-repo organisation "tyranitar-poke")]
+    (let [response (repos/org-repos organisation)]
       (not (busted? response)))
     (catch Exception e
       false)))

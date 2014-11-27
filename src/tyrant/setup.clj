@@ -1,9 +1,9 @@
-(ns tyranitar.setup
+(ns tyrant.setup
   (:require [clojure.string :as str]
             [environ.core :refer [env]]
             [mixradio.instrumented-jetty :refer [run-jetty]]
             [ninjakoala.ttlr :as ttlr]
-            [tyranitar
+            [tyrant
              [environments :as environments]
              [store :as store]
              [web :as web]]

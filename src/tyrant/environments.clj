@@ -1,7 +1,7 @@
-(ns tyranitar.environments
+(ns tyrant.environments
   (:require [clojure.tools.logging :refer [warn]]
             [ninjakoala.ttlr :as ttlr]
-            [tyranitar.onix :as onix]))
+            [tyrant.lister :as lister]))
 
 (defn environments
   []
@@ -17,7 +17,7 @@
 
 (defn load-environments
   []
-  (map-by-name-kw (map onix/environment (onix/environments))))
+  (map-by-name-kw (map lister/environment (lister/environments))))
 
 (defn environments-healthy?
   []

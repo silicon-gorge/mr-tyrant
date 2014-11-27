@@ -1,12 +1,12 @@
 #!/bin/sh
 
-APP_NAME=tyranitar
+APP_NAME=tyrant
 
 PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
-  echo "Tyranitar is already running in process $PIDS";
+  echo "Tyrant is already running in process $PIDS";
   exit 1
 fi
 
@@ -32,8 +32,8 @@ SERVICE_PORT=${SERVICE_PORT:-"8080"}
 HEALTHCHECK_PATH=${HEALTHCHECK_PATH:-"/healthcheck"}
 START_TIMEOUT_SECONDS=${START_TIMEOUT_SECONDS:-"60"}
 LOGGING_PATH=${LOGGING_PATH:-"/var/log/${SERVICE_NAME}"}
-LOG_FILE=${LOGGING_PATH}/tyranitar.out
-ERR_FILE=${LOGGING_PATH}/tyranitar.err
+LOG_FILE=${LOGGING_PATH}/tyrant.out
+ERR_FILE=${LOGGING_PATH}/tyrant.err
 
 mkdir -p /var/encrypted/logs/${APP_NAME}
 
@@ -44,7 +44,7 @@ waitTimeout=$START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
 
-echo "Giving Tyranitar $waitTimeout seconds to start successfully"
+echo "Giving Tyrant $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
@@ -53,7 +53,7 @@ until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
-    echo "Tyranitar didn't start within $waitTimeout seconds."
+    echo "Tyrant didn't start within $waitTimeout seconds."
     PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
@@ -80,9 +80,9 @@ cat $ERR_FILE 1>&2
 
 if [ $retVal -eq 1 ]
 then
-  echo "Starting Tyranitar failed"
+  echo "Starting Tyrant failed"
 else
-  echo "Starting Tyranitar succeeded"
+  echo "Starting Tyrant succeeded"
 fi
 
 exit $retVal

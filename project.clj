@@ -1,6 +1,5 @@
-(defproject tyranitar "0.61-SNAPSHOT"
-  :description "Tyranitar service"
-  :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Tyranitar"
+(defproject tyrant "0.61-SNAPSHOT"
+  :description "Tyrant service"
 
   :dependencies [[ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
@@ -43,17 +42,17 @@
         :graphite-post-interval-seconds 60
         :github-auth-token "auth-token"
         :github-baseurl "http://github/api/v3/"
-        :github-organisation "tyranitar"
+        :github-organisation "tyrant"
         :logging-consolethreashold "off"
         :logging-filethreshold "info"
         :logging-level "info"
         :logging-path "/tmp"
         :logging-stashthreshold "off"
-        :onix-baseurl "http://onix"
+        :lister-baseurl "http://lister"
         :production false
         :requestlog-enabled false
         :requestlog-retainhours 24
-        :service-name "tyranitar"
+        :service-name "tyrant"
         :service-port "8080"
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
@@ -62,10 +61,10 @@
   :lein-release {:deploy-via :shell
                  :shell ["lein" "do" "clean," "uberjar," "pom," "rpm"]}
 
-  :ring {:handler tyranitar.web/app
-         :main tyranitar.setup
+  :ring {:handler tyrant.web/app
+         :main tyrant.setup
          :port ~(Integer/valueOf (get (System/getenv) "SERVICE_PORT" "8080"))
-         :init tyranitar.setup/setup
+         :init tyrant.setup/setup
          :browser-uri "/healthcheck"
          :nrepl {:start? true}}
 
@@ -74,11 +73,11 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "tyranitar.jar"
+  :uberjar-name "tyrant.jar"
 
   :eastwood {:namespaces [:source-paths]}
 
-  :rpm {:name "tyranitar"
+  :rpm {:name "tyrant"
         :summary "RPM for Tyranitar service"
         :copyright "MixRadio 2014"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
@@ -86,28 +85,19 @@
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.7.0_55-fcs"]
-        :mappings [{:directory "/usr/local/tyranitar"
+        :mappings [{:directory "/usr/local/tyrant"
                     :filemode "444"
-                    :username "tyranitar"
-                    :groupname "tyranitar"
-                    :sources {:source [{:location "target/tyranitar.jar"}]}}
-                   {:directory "/usr/local/tyranitar/bin"
+                    :username "tyrant"
+                    :groupname "tyrant"
+                    :sources {:source [{:location "target/tyrant.jar"}]}}
+                   {:directory "/usr/local/tyrant/bin"
                     :filemode "744"
-                    :username "tyranitar"
-                    :groupname "tyranitar"
+                    :username "tyrant"
+                    :groupname "tyrant"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "755"
-                    :sources {:source [{:location "scripts/service/tyranitar"
-                                        :destination "tyranitar"}]}}]}
+                    :sources {:source [{:location "scripts/service/tyrant"
+                                        :destination "tyrant"}]}}]}
 
-  :main tyranitar.setup)
-  :repositories {"internal-clojars"
-                 "http://clojars.brislabs.com/repo"
-                 "rm.brislabs.com"
-                 "http://rm.brislabs.com/nexus/content/groups/all-releases"}
-
-  :repositories {"internal-clojars"
-                 "http://clojars.brislabs.com/repo"
-                 "rm.brislabs.com"
-                 "http://rm.brislabs.com/nexus/content/groups/all-releases"}
+  :main tyrant.setup)

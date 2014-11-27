@@ -1,4 +1,4 @@
-(ns tyranitar.web
+(ns tyrant.web
   (:require [cheshire.core :as json]
             [clojure.string :refer [split]]
             [clojure.tools.logging :refer [info warn error]]
@@ -20,9 +20,8 @@
              [format-response :refer [wrap-json-response]]
              [params :refer [wrap-params]]]
             [slingshot.slingshot :refer [try+]]
-            [tyranitar
+            [tyrant
              [environments :as environments]
-             [pokemon :as pokemon]
              [store :as store]]))
 
 (def json-content-type "application/json;charset=utf-8")
@@ -36,7 +35,7 @@
 (def env-regex #"dev|poke|prod")
 
 (def version
-  (setup/version "tyranitar"))
+  (setup/version "tyrant"))
 
 (defn response
   [data & [content-type status]]
@@ -53,7 +52,7 @@
   (let [environments-ok? (environments/environments-healthy?)
         github-ok? (store/github-healthy?)
         repos-ok? (store/repos-healthy?)]
-    {:name "tyranitar"
+    {:name "tyrant"
      :version version
      :success (and environments-ok? github-ok? repos-ok?)
      :dependencies [{:name "environments" :success environments-ok?}
@@ -126,17 +125,6 @@
 (defroutes routes
   (context
    "/1.x" []
-
-   (GET "/pokemon"
-        []
-        (response pokemon/pokemon plain-text))
-
-   (GET "/icon"
-        []
-        {:status 200
-         :headers {"Content-Type" "image/jpeg"}
-         :body (-> (clojure.java.io/resource "tyranitar.jpg")
-                   (clojure.java.io/input-stream))})
 
    (context "/applications"
             []

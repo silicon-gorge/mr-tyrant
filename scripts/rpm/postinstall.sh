@@ -1,6 +1,6 @@
 /bin/echo "postinstall script started [$1]"
 
-APP_NAME=tyranitar
+APP_NAME=tyrant
 
 if [ "$1" -le 1 ]
 then

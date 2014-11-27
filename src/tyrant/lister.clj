@@ -1,4 +1,4 @@
-(ns tyranitar.onix
+(ns tyrant.lister
   (:require [cemerick.url :refer [url]]
             [cheshire.core :as json]
             [clj-http.client :as http]
@@ -10,16 +10,16 @@
 (def socket-timeout
   5000)
 
-(def onix-url
-  (url (env :onix-baseurl)))
+(def lister-url
+  (url (env :lister-baseurl)))
 
 (defn environments-url
   []
-  (str (url onix-url "environments")))
+  (str (url lister-url "environments")))
 
 (defn environment-url
   [environment]
-  (str (url onix-url "environments" environment)))
+  (str (url lister-url "environments" environment)))
 
 (defn environments
   []

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PIDS=$(pgrep java -lf | grep tyranitar | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep tyrant | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then

@@ -1,98 +1,53 @@
-# Nokia Entertainment Tyranitar
+# Mr. Tyrant
 
 ## Introduction
 
-Tyranitar is a RESTful web service that exposes the information
-required for the deployment of applications into the Nokia
-Entertainment cloud computing environment. The information is
-stored in git repositories in source.nokia.com. There are three
-types of information:
+Tyrant is a RESTful web service that exposes the information required for the deployment of applications using MixRadio's deployment tooling. The information is stored in Github Enterprise. There are three types of information:
 
-* **deployment parameters** - information required by Asgard for the
-deployment and application configuration process.
+* **application properties** - Configuration parameters for an application, for example URLs to other applications, connection strings and logging levels.
 
-* **launch data** - information required for an application to
-install itself onto a server.
+* **deployment parameters** - Information specifying how the application should be deployed, for example number of instances and security groups.
 
-* **application properties** - configuration parameters for an application,
-for example urls to other used applications, logging levels, etc...
+* **launch data** - An optional list of commands to run after an instance has started, but before the application is launched.
 
-This information is held several git repositories in source.nokia.com
-in the _tyranitar_ project. For each application, there are two
-repositories named _{application}-dev_ and _{application}-prod_. If,
-at some point, we were to have other environments, the naming would
-follow the same pattern. Inside each repository there are three files
-containing the configuration information:
-
-* deployment-params.json
-
-* launch-data.json
+This information for an application is held in a number of repositories in Github Enterprise under a specific organisation. Each repository holds information for an application in a specific environment using the pattern `{application}-{environment}`.
+Inside each repository there are three files which are created by Tyrant when the repository is created.
 
 * application-properties.json
+* deployment-params.json
+* launch-data.json
 
-The whole point of this approach is that we keep all information
-required for application configuation and deployment under tight
-configuration control. We will be able to tie each release of
-an application to specific configuration data. Generally, we will
-release applications using the latest configuration data; but we
-will also be able to revert to earlier setup if required and be
-able to reset the head data set to an earlier one should it be
-necessary. Initially, all of this control of configuation data
-will be done by engineers commiting changes to the repositories.
-Tyranitar is just a read-only view on this data. However, at a later
-point we may decide to extend Tyranitar's capabiilities to include,
-for example, the ability to revert the head to an earlier commit.
+The whole point of this approach is that we keep all information required for application configuration and deployment under version control. We are able to tie each release of an application to a specific configuration hash. Generally, an application release will use the latest configuration data; but we can also also revert to an earlier setup, if required, and be able to reset the `HEAD` data set to an earlier one should it be necessary (all using Git). Once the initial repository is created Tyrant provides read-only access to the data held within.
 
-Simple to start with; more complicated later...possibly!
-
-Note that the relationship between application releases and
-configuration data commits will be managed by the Exploud
-service.
-
-## Notes
-
-There is no longer a concept of environment variables, properties
-are always specific to a service/environment combination.
+Note that the relationship between application releases and configuration data commits will be managed by the Maestro service.
 
 ## Resources
 
-GET /1.x/ping (returns 'pong')
+`GET /ping` - returns `pong` with a status of `200`
 
-GET /1.x/status (returns status of the service)
+`GET /healthcheck` - returns `200` or `500` depending on whether the service is healthy, based on the status of its dependencies
 
-GET /1.x/healthcheck (returns _200_ or _500_ depending on whether the service is healthy)
+`GET /applications/{env}/{app-name}` - returns a list of the commits that exist for this application/environment combination in latest-first order
 
-GET /1.x/applications/{env}/{app-name} (returns a list of the commits that exist for this
-application/environment combination in latest-first order)
+`GET /applications/{env}/{app-name}/{commit}/{properties-set}` - returns a specific set of properties for this application/environment combination at the specified commit level
 
-GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set} (returns a specific set of
-properties for this application/environment combination at the specified commit level)
+`GET /applications` - returns a list of all the applications which have repositories in any environment
 
-GET /1.x/applications (returns a list of all the applications which have repositories in
-any environment).
+`GET /applications/{env}` - returns a list of all the applications which have repositories in the specified environment
 
-GET /1.x/applications/{env} (returns a list of all the applications which have repositories
-in the specified environment).
-
-POST /1.x/applications (creates new application repositories in 'dev' and 'prod' environments.
-Application name specified in body).
-
-POST /1.x/applications/{env}/{app-name}/{properties-set} (adds/updates properties specified in 
-body to the given properties-set).
+`POST /applications` - creates new application repositories in environments where `create-repo` has been specified
 
 ## List Commits
 
 ### Resource Details
 
-GET /1.x/applications/{env}/{app-name}
+`GET /applications/{env}/{app-name}`
 
-For the particular environment _{env} = dev | prod_ returns the list of commits of
-configuration data for the specific application _{app-name}_. It only returns the
-20 most recent commits. This is all we need for our purposes, probably.
+For the particular environment `{env}` returns the list of commits of configuration data for the specific application `{app-name}`. It only returns the 20 most recent commits.
 
 ### Example Request
 
-    GET http://tyranitar.brislabs.com:8080/1.x/applications/prod/subscriptions
+    GET http://tyrant/applications/prod/myapplication
 
 ### Example Response
 
@@ -101,26 +56,13 @@ configuration data for the specific application _{app-name}_. It only returns th
     {
       "commits" : [
         {
-          "hash" : "9cfe7ab02241b9cb6a068973fae90f833210ab72",
-          "committer" : "mdaley",
-          "email" : "matthew.daley@nokia.com",
-          "message" : "decreased instance site to micro.",
-          "date" : "2013-09-19T10:53:22Z"
+          "committer" : "someone",
+          "date" : "2013-09-19T10:53:22Z",
+          "email" : "someone@somewhere.com",
+          "hash" : "acfe7ab02241b9cb6a068973fae90f833210ab73",
+          "message" : "Did something"
         },
-        {
-          "hash" : "dc782a45e2984e20bad30ab25fba45aa94cb52be",
-          "committer" : "micbell",
-          "email" : "michael.1.bell@nokia.com",
-          "message" : "corrected mistake in launch data",
-          "date" : "2013-09-19T10:51:51Z"
-        },
-        {
-          "hash" : "a78f553565f10b4931dab2657c461b3db2ae1b7e",
-          "committer" : "wiekzor",
-          "email" : "jerzy.wieczorek@nokia.com",
-          "message" : "Initial properties for subscriptions service in prod.",
-          "date" : "2013-09-18T14:25:49Z"
-        }
+        ...
       ]
     }
 
@@ -137,37 +79,27 @@ configuration data for the specific application _{app-name}_. It only returns th
 
 ### Resource Details
 
-GET /1.x/applications/{env}/{app-name}/{commit}/{properties-set}
+`GET /applications/{env}/{app-name}/{commit}/{application-properties|deployment-params|launch-data}`
 
-For the particular environment _{env} = dev | prod_, the application _{app-name}_
-and the commit _{commit} = 40 character commit id | head_ get the particular set of properties _{properties-set} =
-deployment-params | launch-data | application-properties_. The requested commit can be specified by either _head_
-(case-insensitive) OR _head~n_ where 'n' is the number of revisions back from HEAD. Alternatively, the full 40-char
-GIT hash may be used.
+For the particular environment `{env}`, the application `{app-name}` and the commit `{commit}` (40 character commit ID or `HEAD`) get the particular set of properties. The requested commit can be specified by either `HEAD` OR `HEAD~n` where 'n' is the number of revisions back from `HEAD`. Alternatively, the full 40-char Git hash may be used.
 
 ### Example Request
 
-    GET http://tyranitar.brislabs.com:8080/1.x/applications/dev/gatekeeper/head~1/service-properties
+    GET http://tyrant/applications/prod/myapplication/HEAD~1/application-properties
 
 ### Example Response
 
     200 OK
     Content-Type: application/json; charset=utf-8
     {
-      "hash" : "d78f553564f10b4931dab2627c46af3db2ae1b22",
+      "hash" : "e78f553564f10b4931dab2627c46af3db2ae1b23",
       "data" : {
-        "service-name" : "gatekeeper",
-        "service-port" : "8080",
-        "service-url":  "http://localhost:%s/1.x",
-        "restdriver-port" :  "8081",
-        "graphite-host" :  "graphite.brislabs.com",
-        "graphite-port" : "8080",
-        "nokia-account-baseurl" : "https://account.music.nokia.cq3.brislabs.com",
-        "devicelicenses1-baseurl" : "http://devicelicenses.ent.cq3.brislabs.com:8080/1.x",
-        "eapi1-baseurl" : "http://eapi.ent.cq3.brislabs.com/1.x",
-        "keymaster1-baseur"l : "http://keymaster.ent.cq3.brislabs.com:8080/1.x",
-        "jagus1-baseurl" : "http://jagus.ent.cq3.brislabs.com:8080/1.x"
+        "service.name" : "myapplication",
+        "service.port" : "8080",
+        "graphite-host" :  "graphite",
+        "graphite-port" : "2003"
       }
+    }
 
 ### Response Codes
 
@@ -181,13 +113,13 @@ GIT hash may be used.
 
 ### Resource Details
 
-GET /1.x/applications
+`GET /applications`
 
 Returns a list of all the applications which have repositories configured in any environment.
 
 ### Example Request
 
-    GET http://tyranitar.brislabs.com:8080/1.x/applications
+    GET http://tyrant/applications
 
 ### Example Response
 
@@ -195,39 +127,35 @@ Returns a list of all the applications which have repositories configured in any
     Content-Type: application/json; charset=utf-8
     {
       "applications":{
-        "tyranitar":{
+        "tyrant":{
           "repositories":[
             {
-              "name":"tyranitar-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-dev"
+              "name":"tyrant-poke",
+              "path":"git@github:tyrant/tyrant-poke.git"
             },
             {
-              "name":"tyranitar-prod",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-prod"
+              "name":"tyrant-prod",
+              "path":"git@github:tyrant/tyrant-prod.git"
             }
           ]
         },
-        "ditto":{
+        "baker":{
           "repositories":[
             {
-              "name":"ditto-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-dev"
-            },
-            {
-              "name":"ditto-prod",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-prod"
+              "name":"baker-poke",
+              "path":"git@github:tyrant/baker-poke.git"
             }
           ]
         },
-        "onix":{
+        "lister":{
           "repositories":[
             {
-              "name":"onix-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-dev"
+              "name":"lister-poke",
+              "path":"git@github:tyrant/lister-poke.git"
             },
             {
-              "name":"onix-prod",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-prod"
+              "name":"lister-prod",
+              "path":"git@github:tyrant/lister-prod.git"
             }
           ]
         }
@@ -244,13 +172,13 @@ Returns a list of all the applications which have repositories configured in any
 
 ### Resource Details
 
-GET /1.x/applications/{env}
+`GET /applications/{env}`
 
 Returns a list of all the applications which have repositories in the specified environment.
 
 ### Example Request
 
-    GET http://tyranitar.brislabs.com:8080/1.x/applications/dev
+    GET http://tyrant/applications/poke
 
 ### Example Response
 
@@ -258,27 +186,27 @@ Returns a list of all the applications which have repositories in the specified 
     Content-Type: application/json; charset=utf-8
     {
       "applications":{
-        "tyranitar":{
+        "tyrant":{
           "repositories":[
             {
-              "name":"tyranitar-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/tyranitar-dev"
+              "name":"tyrant-poke",
+              "path":"git@github:tyrant/tyrant-poke.git"
             }
           ]
         },
-        "ditto":{
+        "baker":{
           "repositories":[
             {
-              "name":"ditto-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/ditto-dev"
+              "name":"baker-poke",
+              "path":"git@github:tyrant/baker-poke.git"
             }
           ]
         },
-        "onix":{
+        "lister":{
           "repositories":[
             {
-              "name":"onix-dev",
-              "path":"ssh://snc@source.nokia.com/tyranitar/git/onix-dev"
+              "name":"lister-poke",
+              "path":"git@github:tyrant/lister-poke.git"
             }
           ]
         }
@@ -295,15 +223,13 @@ Returns a list of all the applications which have repositories in the specified 
 
 ### Resource Details
 
-POST /1.x/applications
+`POST /applications`
 
 Creates new application repositories in 'dev' and 'prod' environments. Application name specified in body.
 
 ### Example Request
 
-    POST http://tyranitar.brislabs.com:8080/1.x/applications
-
-    {"name": "myapp"}
+    POST http://tyrant/applications/myapplication
 
 ### Example Response
 
@@ -312,12 +238,12 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
     {
       "repositories": [
         {
-          "name" : "myapp-dev",
-          "path" : "ssh://snc@source.nokia.com/tyranitar/git/myapp-dev"
+          "name" : "myapplication-poke",
+          "path" : "git@github:tyrant/myapplication-poke.git"
         },
         {
-          "name" : "myapp-prod",
-          "path" : "ssh://snc@source.nokia.com/tyranitar/git/myapp-prod"
+          "name" : "myapplication-prod",
+          "path" : "git@github:tyrant/myapplication-prod.git"
         }
       ]
     }
@@ -326,50 +252,6 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
 
 200 OK
 
-409 CONFLICT - Application name already exists.
-
-500 InternalServerError
-
-## Update Application Properties
-
-## Resource Details
-
-POST /1.x/applications/{env}/{app-name}/{properties-set}
-
-Updates the given properties-set for the given application in the given environment with the property
-name/value pairs in the request body.
-
-### Example Request
-
-    POST http://tyranitar.brislabs.com:8080/1.x/applications/dev/myapp/application-properties
-
-    {
-      "service.asg.min": "1",
-      "service.asg.max": "3",
-      "service.asg.preferred": "2"
-    }
-    
-### Example Response
-
-    200 OK
-    Content-Type: application/json; charset=utf-8
-    {
-      "hash" : "d78f553564f10b4931dab2627c46af3db2ae1b22",
-      "data" : {
-        "graphite-host" :  "graphite.brislabs.com",
-        "graphite-port" : "8080",
-        "service.asg.max": "3",
-        "service.asg.min": "1",
-        "service.asg.preferred": "2",
-        "service-name" : "wibble",
-        "service-port" : "8080",
-        "service-url":  "http://localhost:%s/1.x"
-      }
-      
-### Response Codes
-
-200 OK
-
-409 CONFLICT - Error updating GIT
+409 Conflict - Application name already exists.
 
 500 InternalServerError

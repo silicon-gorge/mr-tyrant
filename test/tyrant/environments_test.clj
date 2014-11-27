@@ -1,8 +1,8 @@
-(ns tyranitar.environments-test
+(ns tyrant.environments-test
   (:require [midje.sweet :refer :all]
-            [tyranitar
+            [tyrant
              [environments :refer :all]
-             [onix :as onix]]))
+             [lister :as lister]]))
 
 (fact "that loading our environments does what we expect"
       (load-environments)
@@ -11,9 +11,9 @@
           :env2 {:name "env2"
                  :metadata {:second "metadata"}}}
       (provided
-       (onix/environments) => ["env1" "env2"]
-       (onix/environment "env1") => {:name "env1" :metadata {:first "metadata"}}
-       (onix/environment "env2") => {:name "env2" :metadata {:second "metadata"}}))
+       (lister/environments) => ["env1" "env2"]
+       (lister/environment "env1") => {:name "env1" :metadata {:first "metadata"}}
+       (lister/environment "env2") => {:name "env2" :metadata {:second "metadata"}}))
 
 (fact "that getting default environments works"
       (default-environments) => {:env1 {:name "env1" :metadata {:account-id "onething"
