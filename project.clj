@@ -16,10 +16,10 @@
                  [mixradio/instrumented-ring-jetty-adapter "1.0.4"]
                  [mixradio/radix "1.0.5"]
                  [net.logstash.logback/logstash-logback-encoder "3.2"]
+                 [ninjakoala/tentacles.custom "0.2.9"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [ring-middleware-format "0.4.0"]
-                 [tentacles.custom "0.2.8"]]
+                 [ring-middleware-format "0.4.0"]]
 
   :exclusions [commons-logging
                log4j
@@ -67,11 +67,6 @@
          :init tyrant.setup/setup
          :browser-uri "/healthcheck"
          :nrepl {:start? true}}
-
-  :repositories {"internal-clojars"
-                 "http://clojars.brislabs.com/repo"
-                 "rm.brislabs.com"
-                 "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
   :uberjar-name "tyrant.jar"
 
