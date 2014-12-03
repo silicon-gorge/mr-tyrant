@@ -1,4 +1,4 @@
-(defproject tyrant "0.63"
+(defproject tyrant "0.64-SNAPSHOT"
   :description "Tyrant service"
 
   :dependencies [[ch.qos.logback/logback-classic "1.1.2"]
