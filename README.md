@@ -21,6 +21,29 @@ The whole point of this approach is that we keep all information required for ap
 
 Note that the relationship between application releases and configuration data commits will be managed by the Maestro service.
 
+## Running
+
+```
+lein run
+```
+
+or:
+
+```
+lein uberjar
+java -jar tyrant.jar
+```
+
+## Configuration
+
+There are a number of properties which are present in the `project.clj`. With the `lein run` option you can just amend the properties and they'll be made available to the application via [lein-environ](https://github.com/weavejester/environ). If using the `uberjar` option, you'll want to `export` them first:
+
+```
+export GITHUB_BASEURL=http://github
+# The above property will be recognised by environ as :github-baseurl
+java -jar tyrant.jar
+```
+
 ## Resources
 
 `GET /ping` - returns `pong` with a status of `200`
@@ -255,3 +278,9 @@ Creates new application repositories in 'dev' and 'prod' environments. Applicati
 409 Conflict - Application name already exists.
 
 500 InternalServerError
+
+## License
+
+Copyright © 2014 MixRadio
+
+[mr-tyrant is released under the 3-clause license ("New BSD License" or "Modified BSD License")](https://github.com/mixradio/mr-tyrant/blob/master/LICENSE)

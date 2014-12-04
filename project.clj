@@ -1,5 +1,6 @@
 (defproject tyrant "0.63-SNAPSHOT"
   :description "Tyrant service"
+  :license  "https://github.com/mixradio/mr-tyrant/blob/master/LICENSE"
 
   :dependencies [[ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
