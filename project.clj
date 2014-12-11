@@ -1,4 +1,4 @@
-(defproject tyrant "0.63-SNAPSHOT"
+(defproject tyrant "0.64-SNAPSHOT"
   :description "Tyrant service"
   :license  "https://github.com/mixradio/mr-tyrant/blob/master/LICENSE"
 
