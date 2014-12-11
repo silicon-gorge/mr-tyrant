@@ -2,7 +2,11 @@
 
 ## Introduction
 
-Tyrant is a RESTful web service that exposes the information required for the deployment of applications using MixRadio's deployment tooling. The information is stored in Github Enterprise. There are three types of information:
+Tyrant is a RESTful web service that exposes the information required for the deployment of applications using MixRadio's deployment tooling.
+
+You can see @neilprosser talking about the application in [this talk at Clojure eXchange 2014](https://skillsmatter.com/skillscasts/6057-herding-cattle-with-clojure-at-mixradio).
+
+The information is stored in Github Enterprise. There are three types of information:
 
 * **application properties** - Configuration parameters for an application, for example URLs to other applications, connection strings and logging levels.
 
