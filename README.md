@@ -1,4 +1,4 @@
-# Mr. Tyrant
+# Mr. Tyrant [![Build Status](https://travis-ci.org/mixradio/mr-tyrant.png)](https://travis-ci.org/mixradio/mr-tyrant)
 
 ## Introduction
 
