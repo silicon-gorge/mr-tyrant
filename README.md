@@ -15,7 +15,8 @@ The information is stored in Github Enterprise. There are three types of informa
 * **launch data** - An optional list of commands to run after an instance has started, but before the application is launched.
 
 This information for an application is held in a number of repositories in Github Enterprise under a specific organisation. Each repository holds information for an application in a specific environment using the pattern `{application}-{environment}`.
-Inside each repository there are three files which are created by Tyrant when the repository is created.
+
+Inside each repository there are three files which are created by Tyrant when the repository is created:
 
 * application-properties.json
 * deployment-params.json
@@ -35,7 +36,7 @@ or:
 
 ```
 lein uberjar
-java -jar tyrant.jar
+java -jar target/tyrant.jar
 ```
 
 ## Configuration
