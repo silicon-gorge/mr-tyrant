@@ -20,6 +20,14 @@
 (def ^:private organisation
   (env :github-organisation))
 
+(def ^:private github-options
+  {:oauth-token (env :github-auth-token)})
+
+(defn merge-options
+  [options]
+  (merge github-options
+         options))
+
 (defn- busted?
   [response]
   (if-let [status (:status response)]
@@ -43,7 +51,7 @@
   [environment application]
   (try
     (let [repo-name (repo-name application environment)
-          commits (repos/commits organisation repo-name)]
+          commits (repos/commits organisation repo-name github-options)]
       (map extract-commit-info (remove empty? commits)))
     (catch Exception e
       (with-logging-context {:application application
@@ -80,7 +88,7 @@
   (let [repo-name (repo-name application environment)
         ref-map (create-ref-map environment application commit)
         options (merge ref-map {:str? true})
-        response (repos/contents organisation repo-name (str category ".json") options)]
+        response (repos/contents organisation repo-name (str category ".json") (merge-options options))]
     (if-let [data (:content response)]
       (let [hash (hash-from (:url response))]
         {:hash hash
@@ -100,7 +108,7 @@
 (defn all-repositories
   "Gets all repositories in the organisation in Github."
   []
-  (let [response (repos/org-repos organisation {:all_pages true})]
+  (let [response (repos/org-repos organisation (merge-options {:all_pages true}))]
     (when-not (busted? response)
       (doall (map extract-repo-info (remove empty? response))))))
 
@@ -119,7 +127,7 @@
   (try
     (let [repo-name (repo-name application environment)
           options {:auto_init true :has-downloads false :has-issues false :has-wiki false :public false}
-          response (repos/create-org-repo organisation repo-name options)]
+          response (repos/create-org-repo organisation repo-name (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -137,7 +145,7 @@
 (defn- github-working?
   []
   (try
-    (let [response (repos/org-repos organisation)]
+    (let [response (repos/org-repos organisation github-options)]
       (not (busted? response)))
     (catch Exception e
       false)))
@@ -180,7 +188,7 @@
     (let [repo-name (repo-name application environment)
           tree (properties-tree application environment)
           options {}
-          response (data/create-tree organisation repo-name tree options)]
+          response (data/create-tree organisation repo-name tree (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -202,7 +210,7 @@
           date (fmt/unparse (fmt/formatters :date-time-no-ms) (time/now))
           info {:date date :email "mixradiobot@gmail.com" :name "Mix Radio Bot"}
           options {:author info :committer info :parents []}
-          response (data/create-commit organisation repo-name "Initial commit" tree options)]
+          response (data/create-commit organisation repo-name "Initial commit" tree (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -223,7 +231,7 @@
   (try
     (let [repo-name (repo-name application environment)
           options {:force true}
-          response (data/edit-reference organisation repo-name "heads/master" commit options)]
+          response (data/edit-reference organisation repo-name "heads/master" commit (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
