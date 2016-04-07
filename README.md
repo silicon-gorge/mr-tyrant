@@ -1,4 +1,4 @@
-# Mr. Tyrant [![Build Status](https://travis-ci.org/mixradio/mr-tyrant.png)](https://travis-ci.org/mixradio/mr-tyrant)
+# Mr. Tyrant [![Build Status](https://travis-ci.org/silicon-gorge/mr-tyrant.png)](https://travis-ci.org/silicon-gorge/mr-tyrant)
 
 ## Introduction
 
